@@ -1,0 +1,93 @@
+{
+  "fill" : {
+    "automatic-gradient" : "extended-srgb:0.00000,0.53333,1.00000,1.00000"
+  },
+  "groups" : [
+    {
+      "layers" : [
+        {
+          "glass" : true,
+          "image-name" : "ChatGPT Image Sep 20, 2025, 11_06_34 AM.png",
+          "name" : "ChatGPT Image Sep 20, 2025, 11_06_34 AM",
+          "opacity-specializations" : [
+            {
+              "appearance" : "dark",
+              "value" : 0.7
+            }
+          ],
+          "position" : {
+            "scale" : 1,
+            "translation-in-points" : [
+              177.6338800797001,
+              -22.77133727937212
+            ]
+          }
+        },
+        {
+          "image-name" : "ChatGPT Image Sep 20, 2025, 11_05_37 AM.png",
+          "name" : "ChatGPT Image Sep 20, 2025, 11_05_37 AM",
+          "opacity-specializations" : [
+            {
+              "appearance" : "dark",
+              "value" : 0.7
+            }
+          ],
+          "position" : {
+            "scale" : 1,
+            "translation-in-points" : [
+              -36.82473552959477,
+              -9.677650561996657
+            ]
+          }
+        },
+        {
+          "blend-mode-specializations" : [
+            {
+              "appearance" : "dark",
+              "value" : "normal"
+            }
+          ],
+          "fill-specializations" : [
+            {
+              "appearance" : "dark",
+              "value" : "automatic"
+            }
+          ],
+          "glass" : true,
+          "hidden" : false,
+          "image-name" : "ChatGPT Image Sep 20, 2025, 11_02_12 AM.png",
+          "name" : "ChatGPT Image Sep 20, 2025, 11_02_12 AM",
+          "opacity-specializations" : [
+            {
+              "appearance" : "dark",
+              "value" : 0.7
+            }
+          ],
+          "position" : {
+            "scale" : 1,
+            "translation-in-points" : [
+              -169.29177214033683,
+              -4.449571652291111
+            ]
+          }
+        }
+      ],
+      "shadow" : {
+        "kind" : "neutral",
+        "opacity" : 0.5
+      },
+      "translucency" : {
+        "enabled" : true,
+        "value" : 0.5
+      }
+    }
+  ],
+  "supported-platforms" : {
+    "circles" : [
+      "watchOS"
+    ],
+    "squares" : [
+      "macOS"
+    ]
+  }
+}
