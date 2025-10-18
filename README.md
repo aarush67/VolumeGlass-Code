@@ -29,7 +29,7 @@ A beautiful, iOS-style volume indicator for macOS that replaces the default syst
 ## 📥 Installation
 
 ### Download
-1. Download the latest [VolumeGlass.dmg](https://github.com/yourusername/volumeglass/releases/latest)
+1. Download the latest [VolumeGlass.dmg](https://github.com/aarush67/VolumeBar-Code/releases/latest/download/VolumeGlass.dmg)
 2. Open the DMG file
 3. Drag VolumeGlass to your Applications folder
 4. Launch VolumeGlass
