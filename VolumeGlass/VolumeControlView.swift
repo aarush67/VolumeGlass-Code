@@ -8,12 +8,10 @@ struct VolumeControlView: View {
     
     var body: some View {
         HStack(spacing: 12) {
-            // Main volume indicator
             VStack {
                 Spacer()
                 
                 HStack(spacing: 10) {
-                    // Volume bar
                     VolumeIndicatorView(volumeMonitor: volumeMonitor)
                         .frame(width: 60, height: 280)
                         .onLongPressGesture(minimumDuration: 0.8) {
@@ -24,8 +22,7 @@ struct VolumeControlView: View {
                             triggerHapticFeedback()
                         }
                     
-                    // Quick actions button (shows when bar is visible)
-                    if volumeMonitor.isVolumeChanging || showQuickActions {
+                    if volumeMonitor.isVolumeChanging || showQuickActions || showDeviceMenu {
                         quickActionsToggleButton
                             .transition(.scale.combined(with: .opacity))
                     }
@@ -34,7 +31,6 @@ struct VolumeControlView: View {
                 Spacer()
             }
             
-            // Quick actions panel (slides in from the side)
             if showQuickActions && !showDeviceMenu {
                 quickActionsMenu
                     .transition(.asymmetric(
@@ -43,7 +39,6 @@ struct VolumeControlView: View {
                     ))
             }
             
-            // Device selection menu
             if showDeviceMenu {
                 DeviceSelectionMenu(
                     audioDeviceManager: audioDeviceManager,
@@ -63,9 +58,14 @@ struct VolumeControlView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
         .background(.clear)
+        .onChange(of: showQuickActions) { newValue in
+            // Keep mouse enabled when menu is open
+            updateMouseEnabled()
+        }
+        .onChange(of: showDeviceMenu) { newValue in
+            updateMouseEnabled()
+        }
     }
-    
-    // MARK: - Quick Actions Toggle Button
     
     private var quickActionsToggleButton: some View {
         Button(action: {
@@ -73,6 +73,7 @@ struct VolumeControlView: View {
                 showQuickActions.toggle()
             }
             triggerHapticFeedback()
+            updateMouseEnabled()
         }) {
             Image(systemName: showQuickActions ? "xmark.circle.fill" : "ellipsis.circle.fill")
                 .font(.system(size: 22, weight: .medium))
@@ -88,14 +89,11 @@ struct VolumeControlView: View {
         .buttonStyle(.plain)
     }
     
-    // MARK: - Quick Actions Menu
-    
     private var quickActionsMenu: some View {
         VStack(spacing: 10) {
             Spacer()
             
             VStack(spacing: 10) {
-                // Current volume display
                 VStack(spacing: 4) {
                     Image(systemName: volumeIcon)
                         .font(.system(size: 24, weight: .medium))
@@ -112,7 +110,6 @@ struct VolumeControlView: View {
                         .fill(Color.white.opacity(0.08))
                 )
                 
-                // Mute/Unmute button
                 QuickActionButton(
                     icon: volumeMonitor.isMuted ? "speaker.slash.fill" : "speaker.wave.2.fill",
                     label: volumeMonitor.isMuted ? "Unmute" : "Mute",
@@ -122,7 +119,6 @@ struct VolumeControlView: View {
                     triggerHapticFeedback()
                 }
                 
-                // Output device selector
                 QuickActionButton(
                     icon: "hifispeaker.2.fill",
                     label: "Audio Output"
@@ -134,7 +130,6 @@ struct VolumeControlView: View {
                     .background(.white.opacity(0.15))
                     .padding(.vertical, 4)
                 
-                // Volume presets section
                 VStack(spacing: 8) {
                     Text("Quick Volume")
                         .font(.system(size: 11, weight: .semibold))
@@ -190,8 +185,6 @@ struct VolumeControlView: View {
         }
     }
     
-    // MARK: - Helper Functions
-    
     private var volumeIcon: String {
         if volumeMonitor.isMuted {
             return "speaker.slash.fill"
@@ -218,12 +211,24 @@ struct VolumeControlView: View {
             showQuickActions = false
             showDeviceMenu = true
         }
+        updateMouseEnabled()
     }
     
     private func hideDeviceMenu() {
         withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
             showDeviceMenu = false
         }
+        updateMouseEnabled()
+    }
+    
+    private func updateMouseEnabled() {
+        // Keep mouse enabled if ANY menu is open
+        let shouldEnable = showQuickActions || showDeviceMenu || volumeMonitor.isVolumeChanging
+        NotificationCenter.default.post(
+            name: NSNotification.Name("VolumeBarVisibilityChanged"),
+            object: nil,
+            userInfo: ["isVisible": shouldEnable]
+        )
     }
     
     private func triggerHapticFeedback() {
@@ -233,8 +238,6 @@ struct VolumeControlView: View {
         )
     }
 }
-
-// MARK: - Quick Action Button Component
 
 struct QuickActionButton: View {
     let icon: String
@@ -278,8 +281,6 @@ struct QuickActionButton: View {
         .buttonStyle(.plain)
     }
 }
-
-// MARK: - Preset Button Component
 
 struct PresetButton: View {
     let value: Int
