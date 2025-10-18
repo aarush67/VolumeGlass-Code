@@ -32,6 +32,14 @@ class VolumeOverlayWindow: NSWindow {
         setupWindowProperties()
         setupContentView()
         audioDeviceManager.loadDevices()
+        
+        // Listen for when bar shows
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(barVisibilityChanged(_:)),
+            name: NSNotification.Name("VolumeBarVisibilityChanged"),
+            object: nil
+        )
     }
     
     private func setupWindowProperties() {
@@ -41,12 +49,11 @@ class VolumeOverlayWindow: NSWindow {
         self.isOpaque = false
         self.hasShadow = false
         
-        // CRITICAL FIX: Let clicks pass through by default!
+        // Start ignoring mouse
         self.ignoresMouseEvents = true
         
         self.collectionBehavior = [.canJoinAllSpaces, .stationary, .ignoresCycle, .fullScreenAuxiliary]
         self.hidesOnDeactivate = false
-        self.acceptsMouseMovedEvents = true
         self.orderFrontRegardless()
     }
     
@@ -56,9 +63,7 @@ class VolumeOverlayWindow: NSWindow {
                 volumeMonitor: volumeMonitor,
                 audioDeviceManager: audioDeviceManager
             )
-            .background(
-                MouseEventHandler(overlayWindow: self, volumeMonitor: volumeMonitor)
-            )
+            .background(.clear)
             .preferredColorScheme(.dark)
         )
         
@@ -66,9 +71,11 @@ class VolumeOverlayWindow: NSWindow {
         self.contentView = hostingView
     }
     
-    // Method to enable/disable mouse events
-    func setMouseEnabled(_ enabled: Bool) {
-        self.ignoresMouseEvents = !enabled
+    @objc private func barVisibilityChanged(_ notification: Notification) {
+        if let isVisible = notification.userInfo?["isVisible"] as? Bool {
+            print("🎯 Bar visibility: \(isVisible) - Setting ignoresMouseEvents to: \(!isVisible)")
+            self.ignoresMouseEvents = !isVisible
+        }
     }
     
     func showVolumeIndicator() {
@@ -88,96 +95,7 @@ class VolumeOverlayWindow: NSWindow {
     
     deinit {
         windowOrderTimer?.invalidate()
+        NotificationCenter.default.removeObserver(self)
     }
 }
 
-// Helper view to track mouse position and enable window when needed
-struct MouseEventHandler: NSViewRepresentable {
-    let overlayWindow: VolumeOverlayWindow
-    let volumeMonitor: VolumeMonitor
-    
-    func makeNSView(context: Context) -> NSView {
-        let view = MouseTrackingView(overlayWindow: overlayWindow, volumeMonitor: volumeMonitor)
-        return view
-    }
-    
-    func updateNSView(_ nsView: NSView, context: Context) {}
-}
-
-class MouseTrackingView: NSView {
-    weak var overlayWindow: VolumeOverlayWindow?
-    weak var volumeMonitor: VolumeMonitor?
-    private var trackingArea: NSTrackingArea?
-    
-    init(overlayWindow: VolumeOverlayWindow, volumeMonitor: VolumeMonitor) {
-        self.overlayWindow = overlayWindow
-        self.volumeMonitor = volumeMonitor
-        super.init(frame: .zero)
-        setupTracking()
-    }
-    
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
-    
-    private func setupTracking() {
-        let options: NSTrackingArea.Options = [
-            .mouseMoved,
-            .mouseEnteredAndExited,
-            .activeAlways,
-            .inVisibleRect
-        ]
-        
-        trackingArea = NSTrackingArea(
-            rect: bounds,
-            options: options,
-            owner: self,
-            userInfo: nil
-        )
-        
-        if let trackingArea = trackingArea {
-            addTrackingArea(trackingArea)
-        }
-    }
-    
-    override func updateTrackingAreas() {
-        super.updateTrackingAreas()
-        
-        if let trackingArea = trackingArea {
-            removeTrackingArea(trackingArea)
-        }
-        
-        setupTracking()
-    }
-    
-    override func mouseEntered(with event: NSEvent) {
-        super.mouseEntered(with: event)
-        // Only enable mouse events in the volume bar area (left 200px)
-        let location = event.locationInWindow
-        if location.x < 200 {
-            overlayWindow?.setMouseEnabled(true)
-        }
-    }
-    
-    override func mouseExited(with event: NSEvent) {
-        super.mouseExited(with: event)
-        // Disable after a delay
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            if self.volumeMonitor?.isVolumeChanging == false {
-                self.overlayWindow?.setMouseEnabled(false)
-            }
-        }
-    }
-    
-    override func mouseMoved(with event: NSEvent) {
-        super.mouseMoved(with: event)
-        let location = event.locationInWindow
-        
-        // Enable mouse only in the volume bar area
-        if location.x < 200 {
-            overlayWindow?.setMouseEnabled(true)
-        } else {
-            overlayWindow?.setMouseEnabled(false)
-        }
-    }
-}
