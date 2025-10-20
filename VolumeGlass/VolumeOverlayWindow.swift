@@ -33,7 +33,6 @@ class VolumeOverlayWindow: NSWindow {
         setupContentView()
         audioDeviceManager.loadDevices()
         
-        // Listen for when bar shows
         NotificationCenter.default.addObserver(
             self,
             selector: #selector(barVisibilityChanged(_:)),
@@ -48,10 +47,7 @@ class VolumeOverlayWindow: NSWindow {
         self.backgroundColor = .clear
         self.isOpaque = false
         self.hasShadow = false
-        
-        // Start ignoring mouse
         self.ignoresMouseEvents = true
-        
         self.collectionBehavior = [.canJoinAllSpaces, .stationary, .ignoresCycle, .fullScreenAuxiliary]
         self.hidesOnDeactivate = false
         self.orderFrontRegardless()
@@ -64,7 +60,6 @@ class VolumeOverlayWindow: NSWindow {
                 audioDeviceManager: audioDeviceManager
             )
             .background(.clear)
-            .preferredColorScheme(.dark)
         )
         
         hostingView.layer?.backgroundColor = NSColor.clear.cgColor
@@ -73,7 +68,6 @@ class VolumeOverlayWindow: NSWindow {
     
     @objc private func barVisibilityChanged(_ notification: Notification) {
         if let isVisible = notification.userInfo?["isVisible"] as? Bool {
-            print("🎯 Bar visibility: \(isVisible) - Setting ignoresMouseEvents to: \(!isVisible)")
             self.ignoresMouseEvents = !isVisible
         }
     }
