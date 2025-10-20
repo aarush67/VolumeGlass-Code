@@ -8,6 +8,7 @@ struct VolumeIndicatorView: View {
     @State private var showVolumeBar = false
     @State private var hoverTimer: Timer?
     @State private var pulseAnimation = false
+    @State private var isDeviceMenuOpen = false
     @Environment(\.colorScheme) var colorScheme
     
     private var setupState: SetupState? { volumeMonitor.setupState }
@@ -23,7 +24,7 @@ struct VolumeIndicatorView: View {
     private var hoverZoneHeight: CGFloat { isVertical ? barHeight + 80 : 100 }
     
     var effectiveWidth: CGFloat {
-        (isHovering || isDragging || volumeMonitor.isVolumeChanging) ? expandedWidth : normalWidth
+        (isHovering || isDragging || volumeMonitor.isVolumeChanging || isDeviceMenuOpen) ? expandedWidth : normalWidth
     }
     
     var body: some View {
@@ -50,6 +51,22 @@ struct VolumeIndicatorView: View {
         .animation(.spring(response: 0.2, dampingFraction: 0.8), value: volumeMonitor.currentVolume)
         .onReceive(volumeMonitor.$isVolumeChanging) { isChanging in
             handleVolumeChanging(isChanging)
+        }
+        .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("DeviceMenuStateChanged"))) { notification in
+            if let isOpen = notification.userInfo?["isOpen"] as? Bool {
+                isDeviceMenuOpen = isOpen
+                if isOpen {
+                    // Keep bar visible when device menu opens
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        showVolumeBar = true
+                    }
+                    NotificationCenter.default.post(
+                        name: NSNotification.Name("VolumeBarVisibilityChanged"),
+                        object: nil,
+                        userInfo: ["isVisible": true]
+                    )
+                }
+            }
         }
         .accessibilityLabel("Volume: \(Int(volumeMonitor.currentVolume * 100))%")
         .accessibilityValue("\(Int(volumeMonitor.currentVolume * 100)) percent")
@@ -206,16 +223,19 @@ struct VolumeIndicatorView: View {
                 userInfo: ["isVisible": true]
             )
         } else {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
-                if !self.isHovering && !self.isDragging {
-                    withAnimation(.easeOut(duration: 0.4)) {
-                        self.showVolumeBar = false
+            // Don't hide if device menu is open
+            if !isDeviceMenuOpen {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+                    if !self.isHovering && !self.isDragging && !self.isDeviceMenuOpen {
+                        withAnimation(.easeOut(duration: 0.4)) {
+                            self.showVolumeBar = false
+                        }
+                        NotificationCenter.default.post(
+                            name: NSNotification.Name("VolumeBarVisibilityChanged"),
+                            object: nil,
+                            userInfo: ["isVisible": false]
+                        )
                     }
-                    NotificationCenter.default.post(
-                        name: NSNotification.Name("VolumeBarVisibilityChanged"),
-                        object: nil,
-                        userInfo: ["isVisible": false]
-                    )
                 }
             }
         }
@@ -240,9 +260,10 @@ struct VolumeIndicatorView: View {
                     self.isHovering = false
                 }
                 
-                if !self.volumeMonitor.isVolumeChanging && !self.isDragging {
+                // Don't hide if device menu is open
+                if !self.volumeMonitor.isVolumeChanging && !self.isDragging && !self.isDeviceMenuOpen {
                     DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-                        if !self.isHovering && !self.isDragging && !self.volumeMonitor.isVolumeChanging {
+                        if !self.isHovering && !self.isDragging && !self.volumeMonitor.isVolumeChanging && !self.isDeviceMenuOpen {
                             withAnimation(.easeOut(duration: 0.4)) {
                                 self.showVolumeBar = false
                             }
@@ -288,9 +309,9 @@ struct VolumeIndicatorView: View {
                     isDragging = false
                 }
                 
-                if !isHovering {
+                if !isHovering && !isDeviceMenuOpen {
                     DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-                        if !self.isHovering && !self.isDragging {
+                        if !self.isHovering && !self.isDragging && !self.isDeviceMenuOpen {
                             withAnimation(.easeOut(duration: 0.4)) {
                                 self.showVolumeBar = false
                             }
@@ -323,9 +344,9 @@ struct VolumeIndicatorView: View {
                     isDragging = false
                 }
                 
-                if !isHovering {
+                if !isHovering && !isDeviceMenuOpen {
                     DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-                        if !self.isHovering && !self.isDragging {
+                        if !self.isHovering && !self.isDragging && !self.isDeviceMenuOpen {
                             withAnimation(.easeOut(duration: 0.4)) {
                                 self.showVolumeBar = false
                             }
