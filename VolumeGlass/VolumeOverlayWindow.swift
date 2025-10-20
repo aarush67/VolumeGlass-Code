@@ -11,6 +11,7 @@ class VolumeOverlayWindow: NSWindow {
         self.volumeMonitor = volumeMonitor
         self.targetScreen = screen
         
+        // Use the target screen's frame, not main screen
         let screenFrame = screen.visibleFrame
         let setupState = volumeMonitor.setupState
         let selectedPosition = setupState?.selectedPosition ?? .leftMiddleVertical
@@ -18,8 +19,8 @@ class VolumeOverlayWindow: NSWindow {
         
         let baseWindowFrame = selectedPosition.getScreenPosition(screenFrame: screenFrame, barSize: barSize)
         let expandedWindowFrame = NSRect(
-            x: baseWindowFrame.minX - 30,
-            y: baseWindowFrame.minY - 30,
+            x: baseWindowFrame.minX,
+            y: baseWindowFrame.minY,
             width: baseWindowFrame.width + 400,
             height: baseWindowFrame.height + 60
         )
@@ -31,7 +32,8 @@ class VolumeOverlayWindow: NSWindow {
             defer: false
         )
         
-        self.collectionBehavior.insert(.canJoinAllSpaces)
+        // CRITICAL: Set the window to the specific screen
+        self.setFrameOrigin(NSPoint(x: expandedWindowFrame.origin.x, y: expandedWindowFrame.origin.y))
         
         setupWindowProperties()
         setupContentView()
@@ -43,6 +45,8 @@ class VolumeOverlayWindow: NSWindow {
             name: NSNotification.Name("VolumeBarVisibilityChanged"),
             object: nil
         )
+        
+        print("📺 Window created on screen: \(screen.localizedName)")
     }
     
     private func setupWindowProperties() {
