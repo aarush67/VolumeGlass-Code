@@ -53,9 +53,8 @@ class VolumeMonitor: ObservableObject {
     
     fileprivate var audioDeviceID: AudioDeviceID = 0
     private var volumeChangeTimer: Timer?
-    private var overlayWindow: VolumeOverlayWindow?
+    private var overlayWindows: [VolumeOverlayWindow] = []
     private var cancellables = Set<AnyCancellable>()
-    private var keyEventMonitor: Any?
     
     var setupState: SetupState?
     
@@ -63,25 +62,31 @@ class VolumeMonitor: ObservableObject {
         print("🎵 VolumeMonitor initialized")
         setupVolumeMonitoring()
         setupDeviceChangeMonitoring()
-        setupKeyboardMonitoring()
         getCurrentVolume()
         checkMuteStatus()
     }
     
     deinit {
         cleanupListeners()
-        if let monitor = keyEventMonitor {
-            NSEvent.removeMonitor(monitor)
+        for window in overlayWindows {
+            window.close()
         }
+        overlayWindows.removeAll()
     }
     
     func createVolumeOverlay() {
-        print("🪟 Creating volume overlay...")
+        print("🪟 Creating volume overlays...")
         print("📍 Setup state position: \(setupState?.selectedPosition.displayName ?? "nil")")
         print("📏 Setup state size: \(setupState?.barSize ?? 0)")
-        overlayWindow = VolumeOverlayWindow(volumeMonitor: self)
-        overlayWindow?.showVolumeIndicator()
-        print("✅ Volume overlay created and shown")
+        
+        // Create overlay for each screen
+        for screen in NSScreen.screens {
+            let window = VolumeOverlayWindow(volumeMonitor: self, screen: screen)
+            window.showVolumeIndicator()
+            overlayWindows.append(window)
+        }
+        
+        print("✅ Volume overlays created for \(overlayWindows.count) screen(s)")
     }
     
     // MARK: - Volume Monitoring Setup
@@ -128,16 +133,6 @@ class VolumeMonitor: ObservableObject {
             deviceChangeCallback,
             Unmanaged.passUnretained(self).toOpaque()
         )
-    }
-    
-    private func setupKeyboardMonitoring() {
-        // Monitor volume key presses (F11, F12) to show overlay
-        keyEventMonitor = NSEvent.addGlobalMonitorForEvents(matching: .keyDown) { [weak self] event in
-            // F11 = 0x67 (Volume Down), F12 = 0x6F (Volume Up)
-            if event.keyCode == 0x67 || event.keyCode == 0x6F {
-                self?.startVolumeChangeIndicator()
-            }
-        }
     }
     
     fileprivate func getDefaultOutputDevice() -> AudioDeviceID {
