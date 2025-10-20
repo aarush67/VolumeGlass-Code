@@ -9,6 +9,7 @@ struct VolumeIndicatorView: View {
     @State private var hoverTimer: Timer?
     @State private var pulseAnimation = false
     @State private var isDeviceMenuOpen = false
+    @State private var isQuickActionsOpen = false
     @Environment(\.colorScheme) var colorScheme
     
     private var setupState: SetupState? { volumeMonitor.setupState }
@@ -24,7 +25,7 @@ struct VolumeIndicatorView: View {
     private var hoverZoneHeight: CGFloat { isVertical ? barHeight + 80 : 100 }
     
     var effectiveWidth: CGFloat {
-        (isHovering || isDragging || volumeMonitor.isVolumeChanging || isDeviceMenuOpen) ? expandedWidth : normalWidth
+        (isHovering || isDragging || volumeMonitor.isVolumeChanging || isDeviceMenuOpen || isQuickActionsOpen) ? expandedWidth : normalWidth
     }
     
     var body: some View {
@@ -56,7 +57,21 @@ struct VolumeIndicatorView: View {
             if let isOpen = notification.userInfo?["isOpen"] as? Bool {
                 isDeviceMenuOpen = isOpen
                 if isOpen {
-                    // Keep bar visible when device menu opens
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        showVolumeBar = true
+                    }
+                    NotificationCenter.default.post(
+                        name: NSNotification.Name("VolumeBarVisibilityChanged"),
+                        object: nil,
+                        userInfo: ["isVisible": true]
+                    )
+                }
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("QuickActionsStateChanged"))) { notification in
+            if let isOpen = notification.userInfo?["isOpen"] as? Bool {
+                isQuickActionsOpen = isOpen
+                if isOpen {
                     withAnimation(.easeInOut(duration: 0.2)) {
                         showVolumeBar = true
                     }
@@ -75,22 +90,14 @@ struct VolumeIndicatorView: View {
     private var verticalVolumeBar: some View {
         VStack(spacing: 0) {
             Spacer()
-            
             ZStack(alignment: .bottom) {
-                backgroundTrack
-                    .frame(width: effectiveWidth, height: barHeight)
-                
-                volumeFill
-                    .frame(width: effectiveWidth, height: calculateFillHeight())
-                
-                if volumeMonitor.isMuted {
-                    muteOverlay
-                }
+                backgroundTrack.frame(width: effectiveWidth, height: barHeight)
+                volumeFill.frame(width: effectiveWidth, height: calculateFillHeight())
+                if volumeMonitor.isMuted { muteOverlay }
             }
             .frame(width: effectiveWidth, height: barHeight)
             .scaleEffect(isDragging ? 1.02 : 1.0)
             .gesture(verticalDragGesture)
-            
             Spacer()
         }
     }
@@ -98,20 +105,13 @@ struct VolumeIndicatorView: View {
     private var horizontalVolumeBar: some View {
         HStack(spacing: 0) {
             ZStack(alignment: .leading) {
-                backgroundTrack
-                    .frame(width: barHeight, height: effectiveWidth)
-                
-                volumeFill
-                    .frame(width: calculateFillWidth(), height: effectiveWidth)
-                
-                if volumeMonitor.isMuted {
-                    muteOverlay
-                }
+                backgroundTrack.frame(width: barHeight, height: effectiveWidth)
+                volumeFill.frame(width: calculateFillWidth(), height: effectiveWidth)
+                if volumeMonitor.isMuted { muteOverlay }
             }
             .frame(width: barHeight, height: effectiveWidth)
             .scaleEffect(isDragging ? 1.02 : 1.0)
             .gesture(horizontalDragGesture)
-            
             Spacer()
         }
     }
@@ -193,22 +193,16 @@ struct VolumeIndicatorView: View {
             .opacity(0.9)
             .scaleEffect(pulseAnimation ? 1.1 : 1.0)
             .animation(.easeInOut(duration: 0.6).repeatForever(autoreverses: true), value: pulseAnimation)
-            .onAppear {
-                pulseAnimation = true
-            }
+            .onAppear { pulseAnimation = true }
     }
     
     private func calculateFillHeight() -> CGFloat {
-        if volumeMonitor.isMuted {
-            return cornerRadius * 2
-        }
+        if volumeMonitor.isMuted { return cornerRadius * 2 }
         return max(cornerRadius * 2, barHeight * CGFloat(volumeMonitor.currentVolume))
     }
     
     private func calculateFillWidth() -> CGFloat {
-        if volumeMonitor.isMuted {
-            return cornerRadius * 2
-        }
+        if volumeMonitor.isMuted { return cornerRadius * 2 }
         return max(cornerRadius * 2, barHeight * CGFloat(volumeMonitor.currentVolume))
     }
     
@@ -223,10 +217,9 @@ struct VolumeIndicatorView: View {
                 userInfo: ["isVisible": true]
             )
         } else {
-            // Don't hide if device menu is open
-            if !isDeviceMenuOpen {
+            if !isDeviceMenuOpen && !isQuickActionsOpen {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
-                    if !self.isHovering && !self.isDragging && !self.isDeviceMenuOpen {
+                    if !self.isHovering && !self.isDragging && !self.isDeviceMenuOpen && !self.isQuickActionsOpen {
                         withAnimation(.easeOut(duration: 0.4)) {
                             self.showVolumeBar = false
                         }
@@ -260,10 +253,9 @@ struct VolumeIndicatorView: View {
                     self.isHovering = false
                 }
                 
-                // Don't hide if device menu is open
-                if !self.volumeMonitor.isVolumeChanging && !self.isDragging && !self.isDeviceMenuOpen {
+                if !self.volumeMonitor.isVolumeChanging && !self.isDragging && !self.isDeviceMenuOpen && !self.isQuickActionsOpen {
                     DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-                        if !self.isHovering && !self.isDragging && !self.volumeMonitor.isVolumeChanging && !self.isDeviceMenuOpen {
+                        if !self.isHovering && !self.isDragging && !self.volumeMonitor.isVolumeChanging && !self.isDeviceMenuOpen && !self.isQuickActionsOpen {
                             withAnimation(.easeOut(duration: 0.4)) {
                                 self.showVolumeBar = false
                             }
@@ -280,10 +272,7 @@ struct VolumeIndicatorView: View {
     }
     
     private func triggerHapticFeedback() {
-        NSHapticFeedbackManager.defaultPerformer.perform(
-            .levelChange,
-            performanceTime: .now
-        )
+        NSHapticFeedbackManager.defaultPerformer.perform(.levelChange, performanceTime: .now)
     }
     
     private var verticalDragGesture: some Gesture {
@@ -293,25 +282,19 @@ struct VolumeIndicatorView: View {
                     isDragging = true
                     showVolumeBar = true
                 }
-                
                 let dragY = value.location.y
                 let newVolume = max(0, min(1, 1 - (dragY / barHeight)))
-                
                 let volumePercent = Int(newVolume * 100)
-                if volumePercent % 50 == 0 {
-                    triggerHapticFeedback()
-                }
-                
+                if volumePercent % 50 == 0 { triggerHapticFeedback() }
                 volumeMonitor.setSystemVolume(Float(newVolume))
             }
             .onEnded { _ in
                 withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
                     isDragging = false
                 }
-                
-                if !isHovering && !isDeviceMenuOpen {
+                if !isHovering && !isDeviceMenuOpen && !isQuickActionsOpen {
                     DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-                        if !self.isHovering && !self.isDragging && !self.isDeviceMenuOpen {
+                        if !self.isHovering && !self.isDragging && !self.isDeviceMenuOpen && !self.isQuickActionsOpen {
                             withAnimation(.easeOut(duration: 0.4)) {
                                 self.showVolumeBar = false
                             }
@@ -328,25 +311,19 @@ struct VolumeIndicatorView: View {
                     isDragging = true
                     showVolumeBar = true
                 }
-                
                 let dragX = value.location.x
                 let newVolume = max(0, min(1, dragX / barHeight))
-                
                 let volumePercent = Int(newVolume * 100)
-                if volumePercent % 50 == 0 {
-                    triggerHapticFeedback()
-                }
-                
+                if volumePercent % 50 == 0 { triggerHapticFeedback() }
                 volumeMonitor.setSystemVolume(Float(newVolume))
             }
             .onEnded { _ in
                 withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
                     isDragging = false
                 }
-                
-                if !isHovering && !isDeviceMenuOpen {
+                if !isHovering && !isDeviceMenuOpen && !isQuickActionsOpen {
                     DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-                        if !self.isHovering && !self.isDragging && !self.isDeviceMenuOpen {
+                        if !self.isHovering && !self.isDragging && !self.isDeviceMenuOpen && !self.isQuickActionsOpen {
                             withAnimation(.easeOut(duration: 0.4)) {
                                 self.showVolumeBar = false
                             }
