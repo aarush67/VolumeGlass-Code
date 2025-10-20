@@ -19,7 +19,6 @@ struct VolumeIndicatorView: View {
     private var expandedWidth: CGFloat { 18 * barSize }
     private var cornerRadius: CGFloat { 9 * barSize }
     
-    // HUGE hover zone
     private var hoverZoneWidth: CGFloat { isVertical ? 100 : barHeight + 80 }
     private var hoverZoneHeight: CGFloat { isVertical ? barHeight + 80 : 100 }
     
@@ -29,16 +28,13 @@ struct VolumeIndicatorView: View {
     
     var body: some View {
         ZStack {
-            // ALWAYS VISIBLE HOVER DETECTION AREA
             Rectangle()
-                .fill(Color.white.opacity(0.001)) // Nearly invisible but still detectable
+                .fill(Color.white.opacity(0.001))
                 .frame(width: hoverZoneWidth, height: hoverZoneHeight)
                 .onHover { hovering in
-                    print("🖱️ HOVER: \(hovering)")
                     handleHover(hovering)
                 }
             
-            // VOLUME BAR (can be hidden)
             Group {
                 if isVertical {
                     verticalVolumeBar
@@ -59,8 +55,6 @@ struct VolumeIndicatorView: View {
         .accessibilityValue("\(Int(volumeMonitor.currentVolume * 100)) percent")
     }
     
-    // MARK: - Vertical Volume Bar
-    
     private var verticalVolumeBar: some View {
         VStack(spacing: 0) {
             Spacer()
@@ -70,10 +64,7 @@ struct VolumeIndicatorView: View {
                     .frame(width: effectiveWidth, height: barHeight)
                 
                 volumeFill
-                    .frame(
-                        width: effectiveWidth,
-                        height: calculateFillHeight()
-                    )
+                    .frame(width: effectiveWidth, height: calculateFillHeight())
                 
                 if volumeMonitor.isMuted {
                     muteOverlay
@@ -87,8 +78,6 @@ struct VolumeIndicatorView: View {
         }
     }
     
-    // MARK: - Horizontal Volume Bar
-    
     private var horizontalVolumeBar: some View {
         HStack(spacing: 0) {
             ZStack(alignment: .leading) {
@@ -96,10 +85,7 @@ struct VolumeIndicatorView: View {
                     .frame(width: barHeight, height: effectiveWidth)
                 
                 volumeFill
-                    .frame(
-                        width: calculateFillWidth(),
-                        height: effectiveWidth
-                    )
+                    .frame(width: calculateFillWidth(), height: effectiveWidth)
                 
                 if volumeMonitor.isMuted {
                     muteOverlay
@@ -113,23 +99,21 @@ struct VolumeIndicatorView: View {
         }
     }
     
-    // MARK: - Component Views
-    
     private var backgroundTrack: some View {
         RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
             .fill(.clear)
             .background(
                 RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                     .fill(.ultraThinMaterial)
-                    .opacity(0.3)
+                    .opacity(colorScheme == .dark ? 0.3 : 0.5)
             )
             .overlay(
                 RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                     .stroke(
                         LinearGradient(
                             colors: [
-                                Color.white.opacity(0.15),
-                                Color.white.opacity(0.05)
+                                Color.primary.opacity(colorScheme == .dark ? 0.15 : 0.25),
+                                Color.primary.opacity(colorScheme == .dark ? 0.05 : 0.15)
                             ],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
@@ -137,7 +121,7 @@ struct VolumeIndicatorView: View {
                         lineWidth: 0.5
                     )
             )
-            .shadow(color: .black.opacity(0.1), radius: 3, x: 0, y: 2)
+            .shadow(color: .black.opacity(colorScheme == .dark ? 0.1 : 0.2), radius: 3, x: 0, y: 2)
     }
     
     private var volumeFill: some View {
@@ -157,7 +141,7 @@ struct VolumeIndicatorView: View {
                     .fill(
                         LinearGradient(
                             colors: [
-                                Color.white.opacity(0.3),
+                                (colorScheme == .dark ? Color.white : Color.black).opacity(0.3),
                                 Color.clear
                             ],
                             startPoint: .topLeading,
@@ -165,26 +149,30 @@ struct VolumeIndicatorView: View {
                         )
                     )
             )
-            .shadow(color: .white.opacity(0.2), radius: 2, x: 0, y: isVertical ? -1 : 0)
+            .shadow(color: (colorScheme == .dark ? Color.white : Color.black).opacity(0.2), radius: 2, x: 0, y: isVertical ? -1 : 0)
             .shadow(color: .black.opacity(0.15), radius: 3, x: 0, y: isVertical ? 2 : 0)
     }
     
     private var adaptiveGradientColors: [Color] {
-        colorScheme == .dark ? [
-            Color.white.opacity(0.95),
-            Color.white.opacity(0.85),
-            Color.white.opacity(0.75)
-        ] : [
-            Color.black.opacity(0.85),
-            Color.black.opacity(0.75),
-            Color.black.opacity(0.65)
-        ]
+        if colorScheme == .dark {
+            return [
+                Color.white.opacity(0.95),
+                Color.white.opacity(0.85),
+                Color.white.opacity(0.75)
+            ]
+        } else {
+            return [
+                Color(red: 0.2, green: 0.25, blue: 0.3).opacity(0.95),
+                Color(red: 0.15, green: 0.2, blue: 0.25).opacity(0.9),
+                Color(red: 0.1, green: 0.15, blue: 0.2).opacity(0.85)
+            ]
+        }
     }
     
     private var muteOverlay: some View {
         Image(systemName: "speaker.slash.fill")
             .font(.system(size: 12 * barSize, weight: .semibold))
-            .foregroundColor(colorScheme == .dark ? .white : .black)
+            .foregroundColor(colorScheme == .dark ? .white : Color(red: 0.2, green: 0.2, blue: 0.2))
             .opacity(0.9)
             .scaleEffect(pulseAnimation ? 1.1 : 1.0)
             .animation(.easeInOut(duration: 0.6).repeatForever(autoreverses: true), value: pulseAnimation)
@@ -192,8 +180,6 @@ struct VolumeIndicatorView: View {
                 pulseAnimation = true
             }
     }
-    
-    // MARK: - Helper Functions
     
     private func calculateFillHeight() -> CGFloat {
         if volumeMonitor.isMuted {
@@ -210,34 +196,45 @@ struct VolumeIndicatorView: View {
     }
     
     private func handleVolumeChanging(_ isChanging: Bool) {
-        print("📢 Volume changing: \(isChanging)")
         if isChanging {
             withAnimation(.easeInOut(duration: 0.2)) {
                 showVolumeBar = true
             }
+            NotificationCenter.default.post(
+                name: NSNotification.Name("VolumeBarVisibilityChanged"),
+                object: nil,
+                userInfo: ["isVisible": true]
+            )
         } else {
             DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
                 if !self.isHovering && !self.isDragging {
                     withAnimation(.easeOut(duration: 0.4)) {
                         self.showVolumeBar = false
                     }
+                    NotificationCenter.default.post(
+                        name: NSNotification.Name("VolumeBarVisibilityChanged"),
+                        object: nil,
+                        userInfo: ["isVisible": false]
+                    )
                 }
             }
         }
     }
     
     private func handleHover(_ hovering: Bool) {
-        print("👆 HANDLING HOVER: \(hovering)")
         hoverTimer?.invalidate()
         
         if hovering {
-            print("✅ SHOWING BAR!")
             withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
                 isHovering = true
                 showVolumeBar = true
             }
+            NotificationCenter.default.post(
+                name: NSNotification.Name("VolumeBarVisibilityChanged"),
+                object: nil,
+                userInfo: ["isVisible": true]
+            )
         } else {
-            print("⏳ Will hide soon")
             hoverTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: false) { _ in
                 withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
                     self.isHovering = false
@@ -246,10 +243,14 @@ struct VolumeIndicatorView: View {
                 if !self.volumeMonitor.isVolumeChanging && !self.isDragging {
                     DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
                         if !self.isHovering && !self.isDragging && !self.volumeMonitor.isVolumeChanging {
-                            print("🚫 HIDING BAR")
                             withAnimation(.easeOut(duration: 0.4)) {
                                 self.showVolumeBar = false
                             }
+                            NotificationCenter.default.post(
+                                name: NSNotification.Name("VolumeBarVisibilityChanged"),
+                                object: nil,
+                                userInfo: ["isVisible": false]
+                            )
                         }
                     }
                 }
@@ -263,8 +264,6 @@ struct VolumeIndicatorView: View {
             performanceTime: .now
         )
     }
-    
-    // MARK: - Gestures
     
     private var verticalDragGesture: some Gesture {
         DragGesture(minimumDistance: 2)
