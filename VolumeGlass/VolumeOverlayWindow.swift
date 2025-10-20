@@ -5,11 +5,13 @@ class VolumeOverlayWindow: NSWindow {
     private let volumeMonitor: VolumeMonitor
     @StateObject private var audioDeviceManager = AudioDeviceManager()
     private var windowOrderTimer: Timer?
+    private let targetScreen: NSScreen
     
-    init(volumeMonitor: VolumeMonitor) {
+    init(volumeMonitor: VolumeMonitor, screen: NSScreen) {
         self.volumeMonitor = volumeMonitor
+        self.targetScreen = screen
         
-        let screenFrame = NSScreen.main?.visibleFrame ?? NSRect(x: 0, y: 0, width: 1920, height: 1080)
+        let screenFrame = screen.visibleFrame
         let setupState = volumeMonitor.setupState
         let selectedPosition = setupState?.selectedPosition ?? .leftMiddleVertical
         let barSize = setupState?.barSize ?? 1.0
@@ -28,6 +30,8 @@ class VolumeOverlayWindow: NSWindow {
             backing: .buffered,
             defer: false
         )
+        
+        self.collectionBehavior.insert(.canJoinAllSpaces)
         
         setupWindowProperties()
         setupContentView()
