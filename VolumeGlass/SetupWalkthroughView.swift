@@ -3,18 +3,18 @@ import SwiftUI
 struct SetupWalkthroughView: View {
     @ObservedObject var setupState: SetupState
     @State private var currentStep = 0
+    @Environment(\.colorScheme) var colorScheme
     
     let steps = [
         "Welcome to VolumeGlass",
         "Choose Position",
         "Choose Size",
-        "How to Use",
+        "Audio Device Selection",
         "All Set!"
     ]
     
     var body: some View {
         ZStack {
-            // Glass background
             Rectangle()
                 .fill(.regularMaterial)
                 .ignoresSafeArea()
@@ -24,19 +24,23 @@ struct SetupWalkthroughView: View {
                 HStack {
                     ForEach(0..<steps.count, id: \.self) { index in
                         Circle()
-                            .fill(index == currentStep ? Color.white : Color.white.opacity(0.3))
-                            .frame(width: 8, height: 8)
-                            .animation(.spring(response: 0.3), value: currentStep)
+                            .fill(index <= currentStep ? Color.accentColor : Color.primary.opacity(0.3))
+                            .frame(width: 10, height: 10)
                     }
                 }
-                .padding(.top, 40)
                 
-                // Content for each step
-                stepContent
-                    .frame(maxWidth: 500)
-                    .padding(.horizontal, 40)
-                
-                Spacer()
+                // Current step content
+                Group {
+                    switch currentStep {
+                    case 0: WelcomeStepView()
+                    case 1: PositionSelectionStepView(setupState: setupState)
+                    case 2: SizeStepView(setupState: setupState)
+                    case 3: AudioDeviceStepView(setupState: setupState)
+                    case 4: CompletionStepView(setupState: setupState)
+                    default: EmptyView()
+                    }
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
                 
                 // Navigation buttons
                 HStack {
@@ -53,12 +57,7 @@ struct SetupWalkthroughView: View {
                     
                     Button(currentStep == steps.count - 1 ? "Finish" : "Next") {
                         if currentStep == steps.count - 1 {
-                            print("🚀 Finish button clicked!")
-                            print("📍 Selected position: \(setupState.selectedPosition.displayName)")
-                            print("📏 Bar size: \(setupState.barSize)")
-                            withAnimation(.smooth) {
-                                setupState.completeSetup()
-                            }
+                            setupState.completeSetup()
                         } else {
                             withAnimation(.smooth) {
                                 currentStep += 1
@@ -67,202 +66,302 @@ struct SetupWalkthroughView: View {
                     }
                     .buttonStyle(.borderedProminent)
                 }
-                .padding(.horizontal, 40)
-                .padding(.bottom, 40)
+                .padding(.bottom)
             }
+            .padding(40)
         }
-        .frame(width: 600, height: 500)
+        .frame(width: 800, height: 700)
     }
+}
+
+struct WelcomeStepView: View {
+    @Environment(\.colorScheme) var colorScheme
     
-    @ViewBuilder
-    private var stepContent: some View {
-        switch currentStep {
-        case 0:
-            welcomeStep
-        case 1:
-            positionStep
-        case 2:
-            sizeStep
-        case 3:
-            howToUseStep
-        case 4:
-            finishStep
-        default:
-            EmptyView()
-        }
-    }
-    
-    // MARK: - Step Views
-    
-    private var welcomeStep: some View {
+    var body: some View {
         VStack(spacing: 20) {
-            Image(systemName: "waveform")
+            Image(systemName: "speaker.wave.3")
                 .font(.system(size: 80))
-                .foregroundColor(.white)
+                .foregroundStyle(Color.primary.opacity(0.9))
             
             Text("Welcome to VolumeGlass")
-                .font(.system(size: 32, weight: .bold))
-                .foregroundColor(.white)
+                .font(.largeTitle)
+                .fontWeight(.bold)
+                .foregroundColor(Color.primary)
             
-            Text("A beautiful, iOS-style volume control for your Mac")
-                .font(.system(size: 16))
-                .foregroundColor(.white.opacity(0.8))
+            Text("An iOS-style volume indicator for your Mac with liquid glass design")
+                .font(.title3)
                 .multilineTextAlignment(.center)
+                .foregroundColor(Color.primary.opacity(0.8))
         }
     }
+}
+
+struct PositionSelectionStepView: View {
+    @ObservedObject var setupState: SetupState
+    @Environment(\.colorScheme) var colorScheme
     
-    private var positionStep: some View {
-        VStack(spacing: 20) {
-            Text("Choose Position")
-                .font(.system(size: 28, weight: .bold))
-                .foregroundColor(.white)
+    var body: some View {
+        VStack(spacing: 30) {
+            Text("Choose Volume Bar Position")
+                .font(.title)
+                .fontWeight(.semibold)
+                .foregroundColor(Color.primary)
             
-            Text("Where would you like the volume bar to appear?")
-                .font(.system(size: 14))
-                .foregroundColor(.white.opacity(0.7))
-                .multilineTextAlignment(.center)
+            Text("Select where you want the volume bar to appear")
+                .foregroundColor(Color.primary.opacity(0.8))
             
-            VStack(spacing: 12) {
+            VStack(spacing: 15) {
                 ForEach(VolumeBarPosition.allCases, id: \.self) { position in
                     Button(action: {
-                        withAnimation(.spring(response: 0.3)) {
-                            setupState.selectedPosition = position
-                        }
+                        setupState.selectedPosition = position
                     }) {
                         HStack {
-                            Image(systemName: position.isVertical ? "rectangle.portrait" : "rectangle")
-                                .font(.system(size: 16))
+                            Image(systemName: iconForPosition(position))
+                                .frame(width: 20)
                             Text(position.displayName)
-                                .font(.system(size: 15, weight: .medium))
-                            Spacer()
+                                .frame(maxWidth: .infinity, alignment: .leading)
                             if setupState.selectedPosition == position {
                                 Image(systemName: "checkmark.circle.fill")
                                     .foregroundColor(.green)
                             }
                         }
-                        .foregroundColor(.white)
-                        .padding()
+                        .padding(.horizontal, 20)
+                        .padding(.vertical, 12)
                         .background(
-                            RoundedRectangle(cornerRadius: 10)
-                                .fill(setupState.selectedPosition == position ? Color.white.opacity(0.2) : Color.white.opacity(0.1))
+                            setupState.selectedPosition == position ?
+                                Color.primary.opacity(0.2) : Color.primary.opacity(0.1)
                         )
+                        .cornerRadius(10)
+                        .foregroundColor(Color.primary)
                     }
                     .buttonStyle(.plain)
                 }
             }
+            .frame(maxWidth: 400)
+            
+            PresetPositionPreview(
+                position: setupState.selectedPosition,
+                size: setupState.barSize
+            )
         }
     }
     
-    private var sizeStep: some View {
+    private func iconForPosition(_ position: VolumeBarPosition) -> String {
+        switch position {
+        case .leftMiddleVertical: return "sidebar.left"
+        case .bottomVertical: return "rectangle.portrait.bottomhalf.filled"
+        case .rightVertical: return "sidebar.right"
+        case .topHorizontal: return "rectangle.topthird.inset.filled"
+        case .bottomHorizontal: return "rectangle.bottomthird.inset.filled"
+        }
+    }
+}
+
+struct SizeStepView: View {
+    @ObservedObject var setupState: SetupState
+    @Environment(\.colorScheme) var colorScheme
+    
+    var body: some View {
+        VStack(spacing: 30) {
+            Text("Customize Size")
+                .font(.title)
+                .fontWeight(.semibold)
+                .foregroundColor(Color.primary)
+            
+            VStack(alignment: .leading, spacing: 10) {
+                Text("Size: \(Int(setupState.barSize * 100))%")
+                    .font(.headline)
+                    .foregroundColor(Color.primary)
+                
+                Slider(value: $setupState.barSize, in: 0.5...2.0)
+                    .accentColor(.accentColor)
+            }
+            .frame(maxWidth: 300)
+            
+            PresetPositionPreview(
+                position: setupState.selectedPosition,
+                size: setupState.barSize
+            )
+        }
+    }
+}
+
+struct AudioDeviceStepView: View {
+    @ObservedObject var setupState: SetupState
+    @StateObject private var audioManager = AudioDeviceManager()
+    @Environment(\.colorScheme) var colorScheme
+    
+    var body: some View {
         VStack(spacing: 20) {
-            Text("Choose Size")
-                .font(.system(size: 28, weight: .bold))
-                .foregroundColor(.white)
+            Text("Audio Device Selection")
+                .font(.title)
+                .fontWeight(.semibold)
+                .foregroundColor(Color.primary)
             
-            Text("Adjust the volume bar size to your preference")
-                .font(.system(size: 14))
-                .foregroundColor(.white.opacity(0.7))
+            Text("Click and hold the volume bar to see available audio devices")
+                .foregroundColor(Color.primary.opacity(0.8))
             
-            VStack(spacing: 15) {
-                Text("Size: \(String(format: "%.0f%%", setupState.barSize * 100))")
-                    .font(.system(size: 18, weight: .semibold))
-                    .foregroundColor(.white)
-                
-                Slider(value: $setupState.barSize, in: 0.7...1.3, step: 0.1)
-                    .tint(.white)
-                    .padding(.horizontal, 30)
+            ScrollView {
+                LazyVStack(spacing: 8) {
+                    ForEach(audioManager.outputDevices, id: \.deviceID) { device in
+                        AudioDeviceRow(
+                            device: device,
+                            isSelected: device.deviceID == audioManager.currentOutputDevice?.deviceID
+                        )
+                        .onTapGesture {
+                            audioManager.setOutputDevice(device)
+                        }
+                    }
+                }
             }
-            .padding(.vertical, 20)
+            .frame(height: 200)
+            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
+        }
+        .onAppear {
+            audioManager.loadDevices()
         }
     }
+}
+
+struct CompletionStepView: View {
+    @ObservedObject var setupState: SetupState
+    @Environment(\.colorScheme) var colorScheme
     
-    private var howToUseStep: some View {
-        VStack(spacing: 24) {
-            Text("How to Use")
-                .font(.system(size: 28, weight: .bold))
-                .foregroundColor(.white)
-            
-            Text("Master VolumeGlass with these gestures")
-                .font(.system(size: 14))
-                .foregroundColor(.white.opacity(0.7))
-            
-            VStack(alignment: .leading, spacing: 16) {
-                FeatureRow(
-                    icon: "hand.point.up",
-                    title: "Hover to Show",
-                    description: "Move your cursor near the bar area to make it appear"
-                )
-                
-                FeatureRow(
-                    icon: "hand.draw",
-                    title: "Drag to Adjust",
-                    description: "Click and drag the bar to change volume"
-                )
-                
-                FeatureRow(
-                    icon: "ellipsis.circle",
-                    title: "Quick Actions",
-                    description: "Click the ••• button for mute, presets, and audio output"
-                )
-                
-                FeatureRow(
-                    icon: "hand.tap",
-                    title: "Double-Tap to Mute",
-                    description: "Quickly mute/unmute by double-tapping the bar"
-                )
-                
-                FeatureRow(
-                    icon: "hand.point.down",
-                    title: "Long Press for Devices",
-                    description: "Hold for 0.8s to switch audio output devices"
-                )
-            }
-            .padding(.horizontal, 20)
-        }
-    }
-    
-    private var finishStep: some View {
+    var body: some View {
         VStack(spacing: 20) {
             Image(systemName: "checkmark.circle.fill")
                 .font(.system(size: 80))
                 .foregroundColor(.green)
             
             Text("All Set!")
-                .font(.system(size: 32, weight: .bold))
-                .foregroundColor(.white)
+                .font(.largeTitle)
+                .fontWeight(.bold)
+                .foregroundColor(Color.primary)
             
-            Text("VolumeGlass is ready to use.\nChange your volume to see it in action!")
-                .font(.system(size: 16))
-                .foregroundColor(.white.opacity(0.8))
+            VStack(alignment: .leading, spacing: 8) {
+                Text("✓ Position: \(setupState.selectedPosition.displayName)")
+                Text("✓ Size: \(Int(setupState.barSize * 100))%")
+                Text("✓ Audio device selection enabled")
+            }
+            .font(.title3)
+            .foregroundColor(Color.primary.opacity(0.8))
+            
+            Text("The volume bar will appear when you adjust system volume")
+                .font(.caption)
+                .foregroundColor(Color.primary.opacity(0.6))
                 .multilineTextAlignment(.center)
         }
     }
 }
 
-// MARK: - Feature Row Component
-
-struct FeatureRow: View {
-    let icon: String
-    let title: String
-    let description: String
+struct PresetPositionPreview: View {
+    let position: VolumeBarPosition
+    let size: CGFloat
+    @Environment(\.colorScheme) var colorScheme
     
     var body: some View {
-        HStack(alignment: .top, spacing: 12) {
-            Image(systemName: icon)
-                .font(.system(size: 20, weight: .medium))
-                .foregroundColor(.white.opacity(0.9))
-                .frame(width: 28)
+        ZStack {
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(Color.primary.opacity(0.3), lineWidth: 2)
+                .frame(width: 400, height: 250)
             
-            VStack(alignment: .leading, spacing: 4) {
-                Text(title)
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundColor(.white)
-                
-                Text(description)
-                    .font(.system(size: 12))
-                    .foregroundColor(.white.opacity(0.7))
-                    .fixedSize(horizontal: false, vertical: true)
+            VolumeBarPreview(
+                size: size,
+                isVertical: position.isVertical,
+                volume: 0.6
+            )
+            .position(previewPositionForPosition(position))
+        }
+        .frame(width: 400, height: 250)
+    }
+    
+    private func previewPositionForPosition(_ position: VolumeBarPosition) -> CGPoint {
+        switch position {
+        case .leftMiddleVertical:
+            return CGPoint(x: 40, y: 125)
+        case .bottomVertical:
+            return CGPoint(x: 200, y: 210)
+        case .rightVertical:
+            return CGPoint(x: 360, y: 125)
+        case .topHorizontal:
+            return CGPoint(x: 200, y: 40)
+        case .bottomHorizontal:
+            return CGPoint(x: 200, y: 210)
+        }
+    }
+}
+
+struct VolumeBarPreview: View {
+    let size: CGFloat
+    let isVertical: Bool
+    let volume: CGFloat
+    @Environment(\.colorScheme) var colorScheme
+    
+    var barWidth: CGFloat { 10 * size }
+    var barHeight: CGFloat { 60 * size }
+    
+    var barColor: Color {
+        colorScheme == .dark ? .white : Color(red: 0.2, green: 0.25, blue: 0.3)
+    }
+    
+    var body: some View {
+        RoundedRectangle(cornerRadius: 6 * size, style: .continuous)
+            .fill(Color.primary.opacity(0.3))
+            .frame(
+                width: isVertical ? barWidth : barHeight,
+                height: isVertical ? barHeight : barWidth
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 6 * size, style: .continuous)
+                    .fill(barColor)
+                    .frame(
+                        width: isVertical ? barWidth : barHeight * volume,
+                        height: isVertical ? barHeight * volume : barWidth
+                    ),
+                alignment: isVertical ? .bottom : .leading
+            )
+    }
+}
+
+struct AudioDeviceRow: View {
+    let device: AudioDevice
+    let isSelected: Bool
+    @Environment(\.colorScheme) var colorScheme
+    
+    var body: some View {
+        HStack {
+            Image(systemName: deviceIcon)
+                .foregroundColor(Color.primary.opacity(0.7))
+                .frame(width: 20)
+            
+            Text(device.name)
+                .foregroundColor(Color.primary)
+            
+            Spacer()
+            
+            if isSelected {
+                Image(systemName: "checkmark")
+                    .foregroundColor(.green)
             }
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .background(isSelected ? Color.primary.opacity(0.1) : .clear)
+        .cornerRadius(8)
+    }
+    
+    private var deviceIcon: String {
+        let deviceName = device.name.lowercased()
+        if deviceName.contains("bluetooth") || deviceName.contains("airpods") {
+            return "headphones"
+        } else if deviceName.contains("built-in") || deviceName.contains("internal") {
+            return "speaker.2"
+        } else if deviceName.contains("usb") {
+            return "cable.connector"
+        } else if deviceName.contains("thunderbolt") || deviceName.contains("displayport") {
+            return "tv"
+        } else {
+            return "speaker.3"
         }
     }
 }
