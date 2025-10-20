@@ -11,7 +11,6 @@ struct VolumeControlView: View {
         HStack(spacing: 12) {
             VStack {
                 Spacer()
-                
                 HStack(spacing: 10) {
                     VolumeIndicatorView(volumeMonitor: volumeMonitor)
                         .frame(width: 60, height: 280)
@@ -28,7 +27,6 @@ struct VolumeControlView: View {
                             .transition(.scale.combined(with: .opacity))
                     }
                 }
-                
                 Spacer()
             }
             
@@ -68,6 +66,14 @@ struct VolumeControlView: View {
             withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) {
                 showQuickActions.toggle()
             }
+            
+            // Notify quick actions state
+            NotificationCenter.default.post(
+                name: NSNotification.Name("QuickActionsStateChanged"),
+                object: nil,
+                userInfo: ["isOpen": showQuickActions]
+            )
+            
             triggerHapticFeedback()
             updateMouseEnabled()
         }) {
@@ -88,43 +94,29 @@ struct VolumeControlView: View {
     private var quickActionsMenu: some View {
         VStack(spacing: 10) {
             Spacer()
-            
             VStack(spacing: 10) {
                 VStack(spacing: 4) {
                     Image(systemName: volumeIcon)
                         .font(.system(size: 24, weight: .medium))
                         .foregroundColor(Color.primary.opacity(0.9))
-                    
                     Text("\(Int(volumeMonitor.currentVolume * 100))%")
                         .font(.system(size: 18, weight: .bold, design: .rounded))
                         .foregroundColor(Color.primary)
                 }
                 .padding(.vertical, 10)
                 .frame(maxWidth: .infinity)
-                .background(
-                    RoundedRectangle(cornerRadius: 10, style: .continuous)
-                        .fill(Color.primary.opacity(0.08))
-                )
+                .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(Color.primary.opacity(0.08)))
                 
-                QuickActionButton(
-                    icon: volumeMonitor.isMuted ? "speaker.slash.fill" : "speaker.wave.2.fill",
-                    label: volumeMonitor.isMuted ? "Unmute" : "Mute",
-                    isDestructive: volumeMonitor.isMuted
-                ) {
+                QuickActionButton(icon: volumeMonitor.isMuted ? "speaker.slash.fill" : "speaker.wave.2.fill", label: volumeMonitor.isMuted ? "Unmute" : "Mute", isDestructive: volumeMonitor.isMuted) {
                     volumeMonitor.toggleMute()
                     triggerHapticFeedback()
                 }
                 
-                QuickActionButton(
-                    icon: "hifispeaker.2.fill",
-                    label: "Audio Output"
-                ) {
+                QuickActionButton(icon: "hifispeaker.2.fill", label: "Audio Output") {
                     showDeviceMenuWithHaptic()
                 }
                 
-                Divider()
-                    .background(Color.primary.opacity(0.15))
-                    .padding(.vertical, 4)
+                Divider().background(Color.primary.opacity(0.15)).padding(.vertical, 4)
                 
                 VStack(spacing: 8) {
                     Text("Quick Volume")
@@ -133,66 +125,27 @@ struct VolumeControlView: View {
                         .textCase(.uppercase)
                     
                     HStack(spacing: 6) {
-                        PresetButton(value: 25) {
-                            volumeMonitor.setSystemVolume(0.25)
-                            triggerHapticFeedback()
-                        }
-                        
-                        PresetButton(value: 50) {
-                            volumeMonitor.setSystemVolume(0.5)
-                            triggerHapticFeedback()
-                        }
-                        
-                        PresetButton(value: 75) {
-                            volumeMonitor.setSystemVolume(0.75)
-                            triggerHapticFeedback()
-                        }
-                        
-                        PresetButton(value: 100) {
-                            volumeMonitor.setSystemVolume(1.0)
-                            triggerHapticFeedback()
-                        }
+                        PresetButton(value: 25) { volumeMonitor.setSystemVolume(0.25); triggerHapticFeedback() }
+                        PresetButton(value: 50) { volumeMonitor.setSystemVolume(0.5); triggerHapticFeedback() }
+                        PresetButton(value: 75) { volumeMonitor.setSystemVolume(0.75); triggerHapticFeedback() }
+                        PresetButton(value: 100) { volumeMonitor.setSystemVolume(1.0); triggerHapticFeedback() }
                     }
                 }
             }
             .padding(14)
             .frame(width: 140)
-            .background(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .fill(.ultraThinMaterial)
-                    .shadow(color: .black.opacity(0.3), radius: 12, x: 0, y: 4)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .stroke(
-                        LinearGradient(
-                            colors: [
-                                Color.primary.opacity(0.2),
-                                Color.primary.opacity(0.05)
-                            ],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        ),
-                        lineWidth: 1
-                    )
-            )
-            
+            .background(RoundedRectangle(cornerRadius: 16, style: .continuous).fill(.ultraThinMaterial).shadow(color: .black.opacity(0.3), radius: 12, x: 0, y: 4))
+            .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).stroke(LinearGradient(colors: [Color.primary.opacity(0.2), Color.primary.opacity(0.05)], startPoint: .topLeading, endPoint: .bottomTrailing), lineWidth: 1))
             Spacer()
         }
     }
     
     private var volumeIcon: String {
-        if volumeMonitor.isMuted {
-            return "speaker.slash.fill"
-        } else if volumeMonitor.currentVolume > 0.66 {
-            return "speaker.wave.3.fill"
-        } else if volumeMonitor.currentVolume > 0.33 {
-            return "speaker.wave.2.fill"
-        } else if volumeMonitor.currentVolume > 0 {
-            return "speaker.wave.1.fill"
-        } else {
-            return "speaker.fill"
-        }
+        if volumeMonitor.isMuted { return "speaker.slash.fill" }
+        else if volumeMonitor.currentVolume > 0.66 { return "speaker.wave.3.fill" }
+        else if volumeMonitor.currentVolume > 0.33 { return "speaker.wave.2.fill" }
+        else if volumeMonitor.currentVolume > 0 { return "speaker.wave.1.fill" }
+        else { return "speaker.fill" }
     }
     
     private func showDeviceMenuWithHaptic() {
@@ -202,13 +155,8 @@ struct VolumeControlView: View {
             showQuickActions = false
             showDeviceMenu = true
         }
-        
-        // Notify that device menu is now open - keeps volume bar visible
-        NotificationCenter.default.post(
-            name: NSNotification.Name("DeviceMenuStateChanged"),
-            object: nil,
-            userInfo: ["isOpen": true]
-        )
+        NotificationCenter.default.post(name: NSNotification.Name("QuickActionsStateChanged"), object: nil, userInfo: ["isOpen": false])
+        NotificationCenter.default.post(name: NSNotification.Name("DeviceMenuStateChanged"), object: nil, userInfo: ["isOpen": true])
         updateMouseEnabled()
     }
     
@@ -216,23 +164,13 @@ struct VolumeControlView: View {
         withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
             showDeviceMenu = false
         }
-        
-        // Notify that device menu is now closed
-        NotificationCenter.default.post(
-            name: NSNotification.Name("DeviceMenuStateChanged"),
-            object: nil,
-            userInfo: ["isOpen": false]
-        )
+        NotificationCenter.default.post(name: NSNotification.Name("DeviceMenuStateChanged"), object: nil, userInfo: ["isOpen": false])
         updateMouseEnabled()
     }
     
     private func updateMouseEnabled() {
         let shouldEnable = showQuickActions || showDeviceMenu || volumeMonitor.isVolumeChanging
-        NotificationCenter.default.post(
-            name: NSNotification.Name("VolumeBarVisibilityChanged"),
-            object: nil,
-            userInfo: ["isVisible": shouldEnable]
-        )
+        NotificationCenter.default.post(name: NSNotification.Name("VolumeBarVisibilityChanged"), object: nil, userInfo: ["isVisible": shouldEnable])
     }
     
     private func triggerHapticFeedback() {
@@ -245,37 +183,26 @@ struct QuickActionButton: View {
     let label: String
     var isDestructive: Bool = false
     let action: () -> Void
-    
     @State private var isPressed = false
     @Environment(\.colorScheme) var colorScheme
     
     var body: some View {
         Button(action: {
-            withAnimation(.spring(response: 0.25, dampingFraction: 0.6)) {
-                isPressed = true
-            }
+            withAnimation(.spring(response: 0.25, dampingFraction: 0.6)) { isPressed = true }
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                withAnimation(.spring(response: 0.25, dampingFraction: 0.6)) {
-                    isPressed = false
-                }
+                withAnimation(.spring(response: 0.25, dampingFraction: 0.6)) { isPressed = false }
             }
             action()
         }) {
             HStack(spacing: 10) {
-                Image(systemName: icon)
-                    .font(.system(size: 15, weight: .semibold))
-                    .frame(width: 20)
-                Text(label)
-                    .font(.system(size: 13, weight: .medium, design: .rounded))
+                Image(systemName: icon).font(.system(size: 15, weight: .semibold)).frame(width: 20)
+                Text(label).font(.system(size: 13, weight: .medium, design: .rounded))
                 Spacer()
             }
             .foregroundColor(isDestructive ? .red.opacity(0.95) : Color.primary.opacity(0.95))
             .padding(.horizontal, 12)
             .padding(.vertical, 10)
-            .background(
-                RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .fill(isDestructive ? Color.red.opacity(0.2) : Color.primary.opacity(0.12))
-            )
+            .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(isDestructive ? Color.red.opacity(0.2) : Color.primary.opacity(0.12)))
             .scaleEffect(isPressed ? 0.96 : 1.0)
         }
         .buttonStyle(.plain)
@@ -285,19 +212,14 @@ struct QuickActionButton: View {
 struct PresetButton: View {
     let value: Int
     let action: () -> Void
-    
     @State private var isPressed = false
     @Environment(\.colorScheme) var colorScheme
     
     var body: some View {
         Button(action: {
-            withAnimation(.spring(response: 0.25, dampingFraction: 0.6)) {
-                isPressed = true
-            }
+            withAnimation(.spring(response: 0.25, dampingFraction: 0.6)) { isPressed = true }
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                withAnimation(.spring(response: 0.25, dampingFraction: 0.6)) {
-                    isPressed = false
-                }
+                withAnimation(.spring(response: 0.25, dampingFraction: 0.6)) { isPressed = false }
             }
             action()
         }) {
@@ -306,10 +228,7 @@ struct PresetButton: View {
                 .foregroundColor(Color.primary.opacity(0.95))
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 8)
-                .background(
-                    RoundedRectangle(cornerRadius: 8, style: .continuous)
-                        .fill(Color.primary.opacity(0.18))
-                )
+                .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(Color.primary.opacity(0.18)))
                 .scaleEffect(isPressed ? 0.92 : 1.0)
         }
         .buttonStyle(.plain)
