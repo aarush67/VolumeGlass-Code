@@ -5,6 +5,7 @@ struct VolumeControlView: View {
     @ObservedObject var audioDeviceManager: AudioDeviceManager
     @State private var showDeviceMenu = false
     @State private var showQuickActions = false
+    @Environment(\.colorScheme) var colorScheme
     
     var body: some View {
         HStack(spacing: 12) {
@@ -58,13 +59,8 @@ struct VolumeControlView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
         .background(.clear)
-        .onChange(of: showQuickActions) { newValue in
-            // Keep mouse enabled when menu is open
-            updateMouseEnabled()
-        }
-        .onChange(of: showDeviceMenu) { newValue in
-            updateMouseEnabled()
-        }
+        .onChange(of: showQuickActions) { _ in updateMouseEnabled() }
+        .onChange(of: showDeviceMenu) { _ in updateMouseEnabled() }
     }
     
     private var quickActionsToggleButton: some View {
@@ -77,7 +73,7 @@ struct VolumeControlView: View {
         }) {
             Image(systemName: showQuickActions ? "xmark.circle.fill" : "ellipsis.circle.fill")
                 .font(.system(size: 22, weight: .medium))
-                .foregroundColor(.white.opacity(0.8))
+                .foregroundColor(Color.primary.opacity(0.8))
                 .frame(width: 32, height: 32)
                 .background(
                     Circle()
@@ -97,17 +93,17 @@ struct VolumeControlView: View {
                 VStack(spacing: 4) {
                     Image(systemName: volumeIcon)
                         .font(.system(size: 24, weight: .medium))
-                        .foregroundColor(.white.opacity(0.9))
+                        .foregroundColor(Color.primary.opacity(0.9))
                     
                     Text("\(Int(volumeMonitor.currentVolume * 100))%")
                         .font(.system(size: 18, weight: .bold, design: .rounded))
-                        .foregroundColor(.white)
+                        .foregroundColor(Color.primary)
                 }
                 .padding(.vertical, 10)
                 .frame(maxWidth: .infinity)
                 .background(
                     RoundedRectangle(cornerRadius: 10, style: .continuous)
-                        .fill(Color.white.opacity(0.08))
+                        .fill(Color.primary.opacity(0.08))
                 )
                 
                 QuickActionButton(
@@ -127,13 +123,13 @@ struct VolumeControlView: View {
                 }
                 
                 Divider()
-                    .background(.white.opacity(0.15))
+                    .background(Color.primary.opacity(0.15))
                     .padding(.vertical, 4)
                 
                 VStack(spacing: 8) {
                     Text("Quick Volume")
                         .font(.system(size: 11, weight: .semibold))
-                        .foregroundColor(.white.opacity(0.5))
+                        .foregroundColor(Color.primary.opacity(0.5))
                         .textCase(.uppercase)
                     
                     HStack(spacing: 6) {
@@ -171,8 +167,8 @@ struct VolumeControlView: View {
                     .stroke(
                         LinearGradient(
                             colors: [
-                                Color.white.opacity(0.2),
-                                Color.white.opacity(0.05)
+                                Color.primary.opacity(0.2),
+                                Color.primary.opacity(0.05)
                             ],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
@@ -200,13 +196,8 @@ struct VolumeControlView: View {
     }
     
     private func showDeviceMenuWithHaptic() {
-        NSHapticFeedbackManager.defaultPerformer.perform(
-            .generic,
-            performanceTime: .now
-        )
-        
+        NSHapticFeedbackManager.defaultPerformer.perform(.generic, performanceTime: .now)
         audioDeviceManager.loadDevices()
-        
         withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
             showQuickActions = false
             showDeviceMenu = true
@@ -222,7 +213,6 @@ struct VolumeControlView: View {
     }
     
     private func updateMouseEnabled() {
-        // Keep mouse enabled if ANY menu is open
         let shouldEnable = showQuickActions || showDeviceMenu || volumeMonitor.isVolumeChanging
         NotificationCenter.default.post(
             name: NSNotification.Name("VolumeBarVisibilityChanged"),
@@ -232,10 +222,7 @@ struct VolumeControlView: View {
     }
     
     private func triggerHapticFeedback() {
-        NSHapticFeedbackManager.defaultPerformer.perform(
-            .generic,
-            performanceTime: .now
-        )
+        NSHapticFeedbackManager.defaultPerformer.perform(.generic, performanceTime: .now)
     }
 }
 
@@ -246,19 +233,18 @@ struct QuickActionButton: View {
     let action: () -> Void
     
     @State private var isPressed = false
+    @Environment(\.colorScheme) var colorScheme
     
     var body: some View {
         Button(action: {
             withAnimation(.spring(response: 0.25, dampingFraction: 0.6)) {
                 isPressed = true
             }
-            
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                 withAnimation(.spring(response: 0.25, dampingFraction: 0.6)) {
                     isPressed = false
                 }
             }
-            
             action()
         }) {
             HStack(spacing: 10) {
@@ -269,12 +255,12 @@ struct QuickActionButton: View {
                     .font(.system(size: 13, weight: .medium, design: .rounded))
                 Spacer()
             }
-            .foregroundColor(isDestructive ? .red.opacity(0.95) : .white.opacity(0.95))
+            .foregroundColor(isDestructive ? .red.opacity(0.95) : Color.primary.opacity(0.95))
             .padding(.horizontal, 12)
             .padding(.vertical, 10)
             .background(
                 RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .fill(isDestructive ? Color.red.opacity(0.2) : Color.white.opacity(0.12))
+                    .fill(isDestructive ? Color.red.opacity(0.2) : Color.primary.opacity(0.12))
             )
             .scaleEffect(isPressed ? 0.96 : 1.0)
         }
@@ -287,29 +273,28 @@ struct PresetButton: View {
     let action: () -> Void
     
     @State private var isPressed = false
+    @Environment(\.colorScheme) var colorScheme
     
     var body: some View {
         Button(action: {
             withAnimation(.spring(response: 0.25, dampingFraction: 0.6)) {
                 isPressed = true
             }
-            
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                 withAnimation(.spring(response: 0.25, dampingFraction: 0.6)) {
                     isPressed = false
                 }
             }
-            
             action()
         }) {
             Text("\(value)")
                 .font(.system(size: 13, weight: .bold, design: .rounded))
-                .foregroundColor(.white.opacity(0.95))
+                .foregroundColor(Color.primary.opacity(0.95))
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 8)
                 .background(
                     RoundedRectangle(cornerRadius: 8, style: .continuous)
-                        .fill(Color.white.opacity(0.18))
+                        .fill(Color.primary.opacity(0.18))
                 )
                 .scaleEffect(isPressed ? 0.92 : 1.0)
         }
