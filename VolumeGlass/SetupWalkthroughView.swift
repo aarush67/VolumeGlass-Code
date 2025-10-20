@@ -9,6 +9,7 @@ struct SetupWalkthroughView: View {
         "Welcome to VolumeGlass",
         "Choose Position",
         "Choose Size",
+        "Keyboard Shortcuts",
         "Audio Device Selection",
         "All Set!"
     ]
@@ -20,7 +21,6 @@ struct SetupWalkthroughView: View {
                 .ignoresSafeArea()
             
             VStack(spacing: 30) {
-                // Step indicator
                 HStack {
                     ForEach(0..<steps.count, id: \.self) { index in
                         Circle()
@@ -29,20 +29,19 @@ struct SetupWalkthroughView: View {
                     }
                 }
                 
-                // Current step content
                 Group {
                     switch currentStep {
                     case 0: WelcomeStepView()
                     case 1: PositionSelectionStepView(setupState: setupState)
                     case 2: SizeStepView(setupState: setupState)
-                    case 3: AudioDeviceStepView(setupState: setupState)
-                    case 4: CompletionStepView(setupState: setupState)
+                    case 3: KeyboardShortcutsStepView()
+                    case 4: AudioDeviceStepView(setupState: setupState)
+                    case 5: CompletionStepView(setupState: setupState)
                     default: EmptyView()
                     }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 
-                // Navigation buttons
                 HStack {
                     if currentStep > 0 {
                         Button("Back") {
@@ -186,6 +185,68 @@ struct SizeStepView: View {
     }
 }
 
+struct KeyboardShortcutsStepView: View {
+    @Environment(\.colorScheme) var colorScheme
+    
+    var body: some View {
+        VStack(spacing: 30) {
+            Image(systemName: "keyboard")
+                .font(.system(size: 60))
+                .foregroundColor(Color.primary.opacity(0.8))
+            
+            Text("Keyboard Shortcuts")
+                .font(.title)
+                .fontWeight(.semibold)
+                .foregroundColor(Color.primary)
+            
+            Text("Control volume from anywhere with these shortcuts")
+                .foregroundColor(Color.primary.opacity(0.8))
+                .multilineTextAlignment(.center)
+            
+            VStack(alignment: .leading, spacing: 16) {
+                KeyboardShortcutRow(keys: "⌘⇧↑", description: "Increase Volume")
+                KeyboardShortcutRow(keys: "⌘⇧↓", description: "Decrease Volume")
+                KeyboardShortcutRow(keys: "⌘⇧M", description: "Toggle Mute")
+            }
+            .padding(20)
+            .background(
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(Color.primary.opacity(0.1))
+            )
+            .frame(maxWidth: 400)
+            
+            Text("Plus hardware volume keys (F11/F12) work too!")
+                .font(.caption)
+                .foregroundColor(Color.primary.opacity(0.6))
+        }
+    }
+}
+
+struct KeyboardShortcutRow: View {
+    let keys: String
+    let description: String
+    @Environment(\.colorScheme) var colorScheme
+    
+    var body: some View {
+        HStack {
+            Text(keys)
+                .font(.system(size: 16, weight: .bold, design: .monospaced))
+                .foregroundColor(Color.primary)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 6)
+                .background(
+                    RoundedRectangle(cornerRadius: 6)
+                        .fill(Color.primary.opacity(0.15))
+                )
+            
+            Text(description)
+                .foregroundColor(Color.primary.opacity(0.8))
+            
+            Spacer()
+        }
+    }
+}
+
 struct AudioDeviceStepView: View {
     @ObservedObject var setupState: SetupState
     @StateObject private var audioManager = AudioDeviceManager()
@@ -241,6 +302,7 @@ struct CompletionStepView: View {
             VStack(alignment: .leading, spacing: 8) {
                 Text("✓ Position: \(setupState.selectedPosition.displayName)")
                 Text("✓ Size: \(Int(setupState.barSize * 100))%")
+                Text("✓ Keyboard shortcuts enabled")
                 Text("✓ Audio device selection enabled")
             }
             .font(.title3)
