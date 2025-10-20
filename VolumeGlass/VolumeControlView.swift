@@ -202,6 +202,13 @@ struct VolumeControlView: View {
             showQuickActions = false
             showDeviceMenu = true
         }
+        
+        // Notify that device menu is now open - keeps volume bar visible
+        NotificationCenter.default.post(
+            name: NSNotification.Name("DeviceMenuStateChanged"),
+            object: nil,
+            userInfo: ["isOpen": true]
+        )
         updateMouseEnabled()
     }
     
@@ -209,6 +216,13 @@ struct VolumeControlView: View {
         withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
             showDeviceMenu = false
         }
+        
+        // Notify that device menu is now closed
+        NotificationCenter.default.post(
+            name: NSNotification.Name("DeviceMenuStateChanged"),
+            object: nil,
+            userInfo: ["isOpen": false]
+        )
         updateMouseEnabled()
     }
     
