@@ -4,23 +4,24 @@ struct DeviceSelectionMenu: View {
     @ObservedObject var audioDeviceManager: AudioDeviceManager
     let onDeviceSelected: (AudioDevice) -> Void
     let onDismiss: () -> Void
+    @Environment(\.colorScheme) var colorScheme
     
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             // Header
             HStack {
                 Image(systemName: "speaker.wave.3")
-                    .foregroundColor(.white.opacity(0.8))
+                    .foregroundColor(Color.primary.opacity(0.8))
                 
                 Text("Audio Output")
                     .font(.headline)
-                    .foregroundColor(.white)
+                    .foregroundColor(Color.primary)
                 
                 Spacer()
                 
                 Button(action: onDismiss) {
                     Image(systemName: "xmark.circle.fill")
-                        .foregroundColor(.white.opacity(0.6))
+                        .foregroundColor(Color.primary.opacity(0.6))
                 }
                 .buttonStyle(.plain)
             }
@@ -29,7 +30,7 @@ struct DeviceSelectionMenu: View {
             .background(.ultraThinMaterial)
             
             Divider()
-                .background(.white.opacity(0.2))
+                .background(Color.primary.opacity(0.2))
             
             // Device list
             ScrollView {
@@ -49,10 +50,10 @@ struct DeviceSelectionMenu: View {
         }
         .frame(width: 280)
         .background(.regularMaterial)
-        .glassEffect(.regular.tint(.clear), in: .rect(cornerRadius: 12))
+        .clipShape(RoundedRectangle(cornerRadius: 12))
         .overlay(
             RoundedRectangle(cornerRadius: 12)
-                .stroke(.white.opacity(0.1), lineWidth: 1)
+                .stroke(Color.primary.opacity(0.1), lineWidth: 1)
         )
         .shadow(color: .black.opacity(0.3), radius: 20, x: 0, y: 10)
     }
@@ -64,6 +65,7 @@ struct DeviceMenuItem: View {
     let onSelected: () -> Void
     
     @State private var isHovered = false
+    @Environment(\.colorScheme) var colorScheme
     
     var body: some View {
         Button(action: onSelected) {
@@ -75,13 +77,13 @@ struct DeviceMenuItem: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(device.name)
                         .font(.system(size: 14, weight: .medium))
-                        .foregroundColor(.white)
+                        .foregroundColor(Color.primary)
                         .lineLimit(1)
                     
                     if !device.manufacturer.isEmpty && device.manufacturer != "Unknown" {
                         Text(device.manufacturer)
                             .font(.system(size: 12))
-                            .foregroundColor(.white.opacity(0.6))
+                            .foregroundColor(Color.primary.opacity(0.6))
                             .lineLimit(1)
                     }
                 }
@@ -109,9 +111,9 @@ struct DeviceMenuItem: View {
     
     private var backgroundColor: Color {
         if isSelected {
-            return .white.opacity(0.15)
+            return Color.primary.opacity(0.15)
         } else if isHovered {
-            return .white.opacity(0.08)
+            return Color.primary.opacity(0.08)
         } else {
             return .clear
         }
@@ -119,15 +121,14 @@ struct DeviceMenuItem: View {
     
     private var iconColor: Color {
         if isSelected {
-            return .white
+            return Color.primary
         } else {
-            return .white.opacity(0.7)
+            return Color.primary.opacity(0.7)
         }
     }
     
     private var deviceIcon: String {
         let deviceName = device.name.lowercased()
-        
         if deviceName.contains("bluetooth") || deviceName.contains("airpods") {
             return "airpods"
         } else if deviceName.contains("built-in") || deviceName.contains("internal") {
