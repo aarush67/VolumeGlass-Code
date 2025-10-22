@@ -6,6 +6,7 @@ struct VolumeGlassApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     @StateObject private var setupState = SetupState()
     
+    
     init() {
         UserDefaults.standard.set(false, forKey: "NSQuitAlwaysKeepsWindows")
         if let bundleID = Bundle.main.bundleIdentifier {
@@ -138,11 +139,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         
         statusItem?.menu = menu
     }
-    
-    @objc private func showAbout() {
-        NSApp.orderFrontStandardAboutPanel(nil)
-    }
-    
+
     @objc private func checkUpdates() {
         print("🔍 Manual update check requested")
         updateManager.checkForUpdates()
@@ -157,8 +154,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 alert.addButton(withTitle: "Later")
                 
                 if alert.runModal() == .alertFirstButtonReturn {
-                    self.updateManager.downloadUpdate()
-                    
+                    self.updateManager.checkForUpdates()
+
                     // Reset icon after user action
                     if let button = self.statusItem?.button {
                         button.image = NSImage(systemSymbolName: "speaker.wave.3", accessibilityDescription: "VolumeGlass")
@@ -178,6 +175,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     @objc private func quitApp() {
         NSApplication.shared.terminate(nil)
     }
+    @objc func showAbout() {
+        NSApp.orderFrontStandardAboutPanel(nil)
+    }
+
     
     private func setupKeyboardMonitoring() {
         eventMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.keyDown, .systemDefined, .flagsChanged]) { [weak self] event in
