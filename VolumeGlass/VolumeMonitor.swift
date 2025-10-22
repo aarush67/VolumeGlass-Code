@@ -32,10 +32,7 @@ private func deviceChangeCallback(
     guard let clientData = inClientData else { return noErr }
     let monitor = Unmanaged<VolumeMonitor>.fromOpaque(clientData).takeUnretainedValue()
     
-    // Clean up old device listeners
     monitor.cleanupListeners()
-    
-    // Setup new device
     monitor.audioDeviceID = monitor.getDefaultOutputDevice()
     monitor.setupVolumeMonitoring()
     monitor.getCurrentVolume()
@@ -79,14 +76,38 @@ class VolumeMonitor: ObservableObject {
         print("📍 Setup state position: \(setupState?.selectedPosition.displayName ?? "nil")")
         print("📏 Setup state size: \(setupState?.barSize ?? 0)")
         
-        // Create overlay for each screen
-        for screen in NSScreen.screens {
+        // Get all screens and log them
+        let screens = NSScreen.screens
+        print("📺 Found \(screens.count) screen(s):")
+        for (index, screen) in screens.enumerated() {
+            print("   Screen \(index): \(screen.localizedName)")
+            print("      Frame: \(screen.frame)")
+            print("      Visible Frame: \(screen.visibleFrame)")
+        }
+        
+        // Create overlay for each unique screen
+        var processedScreens = Set<String>()
+        
+        for screen in screens {
+            // Use screen frame as unique identifier
+            let screenID = "\(screen.frame.origin.x),\(screen.frame.origin.y),\(screen.frame.width),\(screen.frame.height)"
+            
+            // Skip if already processed
+            if processedScreens.contains(screenID) {
+                print("⚠️ Skipping duplicate screen: \(screen.localizedName)")
+                continue
+            }
+            
+            processedScreens.insert(screenID)
+            
             let window = VolumeOverlayWindow(volumeMonitor: self, screen: screen)
             window.showVolumeIndicator()
             overlayWindows.append(window)
+            
+            print("✅ Created overlay on: \(screen.localizedName)")
         }
         
-        print("✅ Volume overlays created for \(overlayWindows.count) screen(s)")
+        print("✅ Total overlays created: \(overlayWindows.count)")
     }
     
     // MARK: - Volume Monitoring Setup
@@ -94,7 +115,6 @@ class VolumeMonitor: ObservableObject {
     fileprivate func setupVolumeMonitoring() {
         audioDeviceID = getDefaultOutputDevice()
         
-        // Add volume change listener
         var address = AudioObjectPropertyAddress(
             mSelector: kAudioHardwareServiceDeviceProperty_VirtualMainVolume,
             mScope: kAudioDevicePropertyScopeOutput,
@@ -108,7 +128,6 @@ class VolumeMonitor: ObservableObject {
             Unmanaged.passUnretained(self).toOpaque()
         )
         
-        // Add mute listener
         address.mSelector = kAudioDevicePropertyMute
         AudioObjectAddPropertyListener(
             audioDeviceID,
