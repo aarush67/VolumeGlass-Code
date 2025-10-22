@@ -11,16 +11,19 @@ class VolumeOverlayWindow: NSWindow {
         self.volumeMonitor = volumeMonitor
         self.targetScreen = screen
         
-        // Use the target screen's frame, not main screen
+        // CRITICAL: Use the specific screen's frame
         let screenFrame = screen.visibleFrame
         let setupState = volumeMonitor.setupState
         let selectedPosition = setupState?.selectedPosition ?? .leftMiddleVertical
         let barSize = setupState?.barSize ?? 1.0
         
+        // Get the base position for the bar on THIS screen
         let baseWindowFrame = selectedPosition.getScreenPosition(screenFrame: screenFrame, barSize: barSize)
+        
+        // Expand window to accommodate menus
         let expandedWindowFrame = NSRect(
-            x: baseWindowFrame.minX,
-            y: baseWindowFrame.minY,
+            x: baseWindowFrame.minX - 30,
+            y: baseWindowFrame.minY - 30,
             width: baseWindowFrame.width + 400,
             height: baseWindowFrame.height + 60
         )
@@ -31,9 +34,6 @@ class VolumeOverlayWindow: NSWindow {
             backing: .buffered,
             defer: false
         )
-        
-        // CRITICAL: Set the window to the specific screen
-        self.setFrameOrigin(NSPoint(x: expandedWindowFrame.origin.x, y: expandedWindowFrame.origin.y))
         
         setupWindowProperties()
         setupContentView()
@@ -47,6 +47,8 @@ class VolumeOverlayWindow: NSWindow {
         )
         
         print("📺 Window created on screen: \(screen.localizedName)")
+        print("   Screen frame: \(screenFrame)")
+        print("   Window frame: \(expandedWindowFrame)")
     }
     
     private func setupWindowProperties() {
@@ -58,6 +60,12 @@ class VolumeOverlayWindow: NSWindow {
         self.ignoresMouseEvents = true
         self.collectionBehavior = [.canJoinAllSpaces, .stationary, .ignoresCycle, .fullScreenAuxiliary]
         self.hidesOnDeactivate = false
+        
+        // CRITICAL: Ensure window appears on the correct screen
+        if let screen = NSScreen.screens.first(where: { $0.frame == targetScreen.frame }) {
+            self.setFrameOrigin(self.frame.origin)
+        }
+        
         self.orderFrontRegardless()
     }
     
