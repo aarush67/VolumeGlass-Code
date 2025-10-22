@@ -14,8 +14,8 @@ struct VolumeIndicatorView: View {
     
     private var setupState: SetupState? { volumeMonitor.setupState }
     private var barSize: CGFloat { setupState?.barSize ?? 1.0 }
-    private var isVertical: Bool { setupState?.isVertical ?? true }
-    
+    private var isVertical: Bool { setupState?.selectedPosition.isVertical ?? true }
+
     private var barHeight: CGFloat { 220 * barSize }
     private var normalWidth: CGFloat { 12 * barSize }
     private var expandedWidth: CGFloat { 18 * barSize }
