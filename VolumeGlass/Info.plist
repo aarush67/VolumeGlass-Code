@@ -10,5 +10,15 @@
 	<false/>
 	<key>NSSupportsSuddenTermination</key>
 	<false/>
+	<key>SUAllowsAutomaticUpdates</key>
+	<true/>
+	<key>SUAutomaticallyUpdate</key>
+	<true/>
+	<key>SUEnableAutomaticChecks</key>
+	<true/>
+	<key>SUFeedURL</key>
+	<string>https://raw.githubusercontent.com/aarush67/VolumeGlass-Code/main/appcast.xml</string>
+	<key>SUPublicEDKey</key>
+	<string>wuA96PSE7fDKecQGCihuY4jvr2U1fHoJTnqnQ6l7RLE=</string>
 </dict>
 </plist>
