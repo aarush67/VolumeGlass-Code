@@ -2,7 +2,7 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/macOS-26.0+-blue.svg" alt="macOS 26.0+">
-  <img src="https://img.shields.io/badge/Swift-5.9-orange.svg" alt="Swift 5.9">
+  <img src="https://img.shields.io/badge/Swift-6.2-orange.svg" alt="Swift 6.2">
   <img src="https://img.shields.io/badge/license-MIT-green.svg" alt="MIT License">
 </p>
 
