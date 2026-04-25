@@ -1,96 +1,473 @@
 import SwiftUI
+import ApplicationServices
 
 struct SetupWalkthroughView: View {
     @ObservedObject var setupState: SetupState
     @State private var currentStep = 0
+    @State private var animateIn = false
     @Environment(\.colorScheme) var colorScheme
     
     let steps = [
-        "Welcome to VolumeGlass",
-        "Choose Position",
-        "Choose Size",
-        "Keyboard Shortcuts",
-        "Audio Device Selection",
-        "All Set!"
+        "Welcome",
+        "Permissions",
+        "Position",
+        "Size",
+        "Shortcuts",
+        "Audio",
+        "Done"
     ]
     
     var body: some View {
         ZStack {
-            Rectangle()
-                .fill(.regularMaterial)
-                .ignoresSafeArea()
+            // Background gradient
+            LinearGradient(
+                colors: colorScheme == .dark 
+                    ? [Color(white: 0.08), Color(white: 0.12)]
+                    : [Color(white: 0.96), Color(white: 0.92)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            .ignoresSafeArea()
             
-            VStack(spacing: 30) {
-                HStack {
+            VStack(spacing: 0) {
+                // Progress indicator
+                HStack(spacing: 6) {
                     ForEach(0..<steps.count, id: \.self) { index in
-                        Circle()
-                            .fill(index <= currentStep ? Color.accentColor : Color.primary.opacity(0.3))
-                            .frame(width: 10, height: 10)
+                        Capsule()
+                            .fill(index <= currentStep 
+                                ? Color.accentColor 
+                                : Color.primary.opacity(0.1))
+                            .frame(width: index == currentStep ? 28 : 6, height: 6)
+                            .animation(.spring(response: 0.4, dampingFraction: 0.8), value: currentStep)
                     }
                 }
+                .padding(.top, 36)
+                .padding(.bottom, 24)
                 
+                // Step label
+                Text(steps[currentStep])
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundColor(.secondary)
+                    .textCase(.uppercase)
+                    .tracking(1.5)
+                    .padding(.bottom, 10)
+                
+                // Content area
                 Group {
                     switch currentStep {
                     case 0: WelcomeStepView()
-                    case 1: PositionSelectionStepView(setupState: setupState)
-                    case 2: SizeStepView(setupState: setupState)
-                    case 3: KeyboardShortcutsStepView()
-                    case 4: AudioDeviceStepView(setupState: setupState)
-                    case 5: CompletionStepView(setupState: setupState)
+                    case 1: AccessibilityPermissionStepView()
+                    case 2: PositionSelectionStepView(setupState: setupState)
+                    case 3: SizeStepView(setupState: setupState)
+                    case 4: KeyboardShortcutsStepView()
+                    case 5: AudioDeviceStepView(setupState: setupState)
+                    case 6: CompletionStepView(setupState: setupState)
                     default: EmptyView()
                     }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .opacity(animateIn ? 1 : 0)
+                .offset(y: animateIn ? 0 : 20)
                 
-                HStack {
+                // Navigation buttons
+                HStack(spacing: 16) {
                     if currentStep > 0 {
-                        Button("Back") {
-                            withAnimation(.smooth) {
-                                currentStep -= 1
+                        Button(action: {
+                            withAnimation(.spring(response: 0.4, dampingFraction: 0.85)) {
+                                animateIn = false
                             }
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+                                currentStep -= 1
+                                withAnimation(.spring(response: 0.4, dampingFraction: 0.85)) {
+                                    animateIn = true
+                                }
+                            }
+                        }) {
+                            HStack(spacing: 6) {
+                                Image(systemName: "chevron.left")
+                                    .font(.system(size: 12, weight: .semibold))
+                                Text("Back")
+                                    .font(.system(size: 14, weight: .medium))
+                            }
+                            .foregroundColor(.secondary)
+                            .padding(.horizontal, 20)
+                            .padding(.vertical, 10)
+                            .background(
+                                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                    .fill(Color.primary.opacity(0.06))
+                            )
                         }
-                        .buttonStyle(.borderedProminent)
+                        .buttonStyle(.plain)
                     }
                     
                     Spacer()
                     
-                    Button(currentStep == steps.count - 1 ? "Finish" : "Next") {
+                    Button(action: {
                         if currentStep == steps.count - 1 {
                             setupState.completeSetup()
                         } else {
-                            withAnimation(.smooth) {
+                            withAnimation(.spring(response: 0.4, dampingFraction: 0.85)) {
+                                animateIn = false
+                            }
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
                                 currentStep += 1
+                                withAnimation(.spring(response: 0.4, dampingFraction: 0.85)) {
+                                    animateIn = true
+                                }
                             }
                         }
+                    }) {
+                        HStack(spacing: 6) {
+                            Text(currentStep == steps.count - 1 ? "Get Started" : "Continue")
+                                .font(.system(size: 14, weight: .semibold))
+                            Image(systemName: currentStep == steps.count - 1 ? "checkmark" : "chevron.right")
+                                .font(.system(size: 12, weight: .semibold))
+                        }
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 24)
+                        .padding(.vertical, 10)
+                        .background(
+                            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                .fill(Color.accentColor)
+                                .shadow(color: Color.accentColor.opacity(0.3), radius: 8, x: 0, y: 4)
+                        )
                     }
-                    .buttonStyle(.borderedProminent)
+                    .buttonStyle(.plain)
                 }
-                .padding(.bottom)
+                .padding(.horizontal, 50)
+                .padding(.bottom, 36)
             }
-            .padding(40)
         }
-        .frame(width: 800, height: 700)
+        .frame(minWidth: 800, minHeight: 720)
+        .onAppear {
+            withAnimation(.spring(response: 0.5, dampingFraction: 0.8).delay(0.2)) {
+                animateIn = true
+            }
+        }
     }
 }
 
 struct WelcomeStepView: View {
     @Environment(\.colorScheme) var colorScheme
+    @State private var iconScale: CGFloat = 0.8
+    @State private var iconOpacity: Double = 0
     
     var body: some View {
-        VStack(spacing: 20) {
-            Image(systemName: "speaker.wave.3")
-                .font(.system(size: 80))
-                .foregroundStyle(Color.primary.opacity(0.9))
+        VStack(spacing: 24) {
+            Spacer()
             
-            Text("Welcome to VolumeGlass")
-                .font(.largeTitle)
-                .fontWeight(.bold)
-                .foregroundColor(Color.primary)
+            // App icon with animation
+            ZStack {
+                Circle()
+                    .fill(
+                        RadialGradient(
+                            colors: [
+                                Color.accentColor.opacity(0.2),
+                                Color.accentColor.opacity(0.05),
+                                Color.clear
+                            ],
+                            center: .center,
+                            startRadius: 30,
+                            endRadius: 100
+                        )
+                    )
+                    .frame(width: 200, height: 200)
+                
+                Image(systemName: "speaker.wave.3.fill")
+                    .font(.system(size: 64, weight: .medium))
+                    .foregroundStyle(
+                        LinearGradient(
+                            colors: [Color.accentColor, Color.accentColor.opacity(0.7)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+            }
+            .scaleEffect(iconScale)
+            .opacity(iconOpacity)
+            .onAppear {
+                withAnimation(.spring(response: 0.6, dampingFraction: 0.7)) {
+                    iconScale = 1.0
+                    iconOpacity = 1.0
+                }
+            }
             
-            Text("An iOS-style volume indicator for your Mac with liquid glass design")
-                .font(.title3)
-                .multilineTextAlignment(.center)
-                .foregroundColor(Color.primary.opacity(0.8))
+            VStack(spacing: 12) {
+                Text("VolumeGlass")
+                    .font(.system(size: 36, weight: .bold, design: .rounded))
+                    .foregroundColor(.primary)
+                
+                Text("A beautiful volume indicator for your Mac")
+                    .font(.system(size: 17, weight: .regular))
+                    .foregroundColor(.secondary)
+                    .multilineTextAlignment(.center)
+            }
+            
+            // Feature highlights
+            VStack(spacing: 16) {
+                FeatureRow(icon: "wand.and.stars", title: "Liquid Glass Design", description: "Sleek, modern appearance")
+                FeatureRow(icon: "hand.draw", title: "Drag to Adjust", description: "Interactive volume control")
+                FeatureRow(icon: "keyboard", title: "Keyboard Shortcuts", description: "Quick volume adjustments")
+            }
+            .padding(.top, 20)
+            
+            Spacer()
+        }
+        .padding(.horizontal, 60)
+    }
+}
+
+struct FeatureRow: View {
+    let icon: String
+    let title: String
+    let description: String
+    
+    var body: some View {
+        HStack(spacing: 14) {
+            Image(systemName: icon)
+                .font(.system(size: 18, weight: .medium))
+                .foregroundColor(.accentColor)
+                .frame(width: 38, height: 38)
+                .background(
+                    RoundedRectangle(cornerRadius: 9, style: .continuous)
+                        .fill(Color.accentColor.opacity(0.12))
+                )
+            
+            VStack(alignment: .leading, spacing: 1) {
+                Text(title)
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundColor(.primary)
+                Text(description)
+                    .font(.system(size: 12, weight: .regular))
+                    .foregroundColor(.secondary)
+            }
+            
+            Spacer()
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 10)
+        .background(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(Color.primary.opacity(0.04))
+        )
+    }
+}
+
+struct AccessibilityPermissionStepView: View {
+    @Environment(\.colorScheme) var colorScheme
+    @State private var isAccessibilityGranted: Bool = false
+    @State private var isChecking = false
+    @State private var permissionTimer: Timer?
+    @State private var pulseAnimation = false
+    
+    var body: some View {
+        VStack(spacing: 24) {
+            Spacer()
+            
+            // Icon with status indicator
+            ZStack {
+                Circle()
+                    .fill(
+                        RadialGradient(
+                            colors: [
+                                (isAccessibilityGranted ? Color.green : Color.orange).opacity(0.2),
+                                (isAccessibilityGranted ? Color.green : Color.orange).opacity(0.05),
+                                Color.clear
+                            ],
+                            center: .center,
+                            startRadius: 30,
+                            endRadius: 100
+                        )
+                    )
+                    .frame(width: 180, height: 180)
+                    .scaleEffect(pulseAnimation && !isAccessibilityGranted ? 1.1 : 1.0)
+                    .animation(.easeInOut(duration: 1.5).repeatForever(autoreverses: true), value: pulseAnimation)
+                
+                Image(systemName: isAccessibilityGranted ? "checkmark.shield.fill" : "hand.raised.fill")
+                    .font(.system(size: 56, weight: .medium))
+                    .foregroundStyle(
+                        LinearGradient(
+                            colors: isAccessibilityGranted
+                                ? [Color.green, Color.green.opacity(0.7)]
+                                : [Color.orange, Color.orange.opacity(0.7)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+            }
+            .onAppear {
+                pulseAnimation = true
+            }
+            
+            VStack(spacing: 12) {
+                Text(isAccessibilityGranted ? "Permission Granted!" : "Accessibility Permission")
+                    .font(.system(size: 28, weight: .bold, design: .rounded))
+                    .foregroundColor(.primary)
+                
+                Text(isAccessibilityGranted
+                    ? "VolumeGlass can now intercept volume keys and hide the system HUD."
+                    : "VolumeGlass needs accessibility access to intercept volume keys and hide the default macOS volume popup.")
+                    .font(.system(size: 15))
+                    .foregroundColor(.secondary)
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: 450)
+            }
+            
+            if !isAccessibilityGranted {
+                // Why we need permission
+                VStack(alignment: .leading, spacing: 12) {
+                    PermissionReasonRow(
+                        icon: "speaker.wave.3.fill",
+                        title: "Intercept Volume Keys",
+                        description: "Capture F11/F12 and media key presses"
+                    )
+                    PermissionReasonRow(
+                        icon: "eye.slash.fill",
+                        title: "Hide System HUD",
+                        description: "Replace Apple's volume popup with VolumeGlass"
+                    )
+                    PermissionReasonRow(
+                        icon: "hand.tap.fill",
+                        title: "Global Shortcuts",
+                        description: "Enable keyboard shortcuts from any app"
+                    )
+                }
+                .padding(20)
+                .background(
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .fill(Color.primary.opacity(0.04))
+                )
+                .frame(maxWidth: 420)
+                
+                // Grant permission button
+                Button(action: requestPermission) {
+                    HStack(spacing: 10) {
+                        if isChecking {
+                            ProgressView()
+                                .scaleEffect(0.8)
+                                .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                        }
+                        Image(systemName: "gear")
+                            .font(.system(size: 16, weight: .semibold))
+                        Text("Open System Settings")
+                            .font(.system(size: 16, weight: .semibold))
+                    }
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 28)
+                    .padding(.vertical, 14)
+                    .background(
+                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            .fill(Color.accentColor)
+                    )
+                }
+                .buttonStyle(.plain)
+                .padding(.top, 8)
+                
+                // Instructions
+                VStack(spacing: 8) {
+                    Text("After clicking, toggle VolumeGlass ON in the list")
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundColor(.secondary)
+                    
+                    HStack(spacing: 4) {
+                        Image(systemName: "arrow.triangle.2.circlepath")
+                            .font(.system(size: 11))
+                        Text("This page will update automatically when granted")
+                            .font(.system(size: 12))
+                    }
+                    .foregroundColor(.secondary.opacity(0.7))
+                }
+                .padding(.top, 4)
+                
+            } else {
+                // Success state
+                VStack(spacing: 8) {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.system(size: 40))
+                        .foregroundColor(.green)
+                    
+                    Text("You're all set! Click Continue to proceed.")
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundColor(.secondary)
+                }
+                .padding(.top, 16)
+            }
+            
+            Spacer()
+        }
+        .padding(.horizontal, 40)
+        .onAppear {
+            checkPermission()
+            startPermissionMonitoring()
+        }
+        .onDisappear {
+            stopPermissionMonitoring()
+        }
+    }
+    
+    private func checkPermission() {
+        isAccessibilityGranted = PermissionManager.shared.isAccessibilityGranted
+    }
+    
+    private func requestPermission() {
+        isChecking = true
+        
+        // Request permission (this opens System Settings)
+        PermissionManager.shared.requestAccessibilityPermission(prompt: true)
+        
+        // Also try to open the specific pane
+        PermissionManager.shared.openAccessibilitySettings()
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+            isChecking = false
+            checkPermission()
+        }
+    }
+    
+    private func startPermissionMonitoring() {
+        // Check every second for permission grant
+        permissionTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
+            let granted = PermissionManager.shared.isAccessibilityGranted
+            if granted != isAccessibilityGranted {
+                withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                    isAccessibilityGranted = granted
+                }
+            }
+        }
+    }
+    
+    private func stopPermissionMonitoring() {
+        permissionTimer?.invalidate()
+        permissionTimer = nil
+    }
+}
+
+struct PermissionReasonRow: View {
+    let icon: String
+    let title: String
+    let description: String
+    
+    var body: some View {
+        HStack(spacing: 14) {
+            Image(systemName: icon)
+                .font(.system(size: 16, weight: .medium))
+                .foregroundColor(.accentColor)
+                .frame(width: 32, height: 32)
+                .background(
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .fill(Color.accentColor.opacity(0.12))
+                )
+            
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundColor(.primary)
+                Text(description)
+                    .font(.system(size: 12, weight: .regular))
+                    .foregroundColor(.secondary)
+            }
+            
+            Spacer()
         }
     }
 }
@@ -100,52 +477,51 @@ struct PositionSelectionStepView: View {
     @Environment(\.colorScheme) var colorScheme
     
     var body: some View {
-        VStack(spacing: 30) {
-            Text("Choose Volume Bar Position")
-                .font(.title)
-                .fontWeight(.semibold)
-                .foregroundColor(Color.primary)
+        VStack(spacing: 24) {
+            Text("Where should it appear?")
+                .font(.system(size: 28, weight: .bold, design: .rounded))
+                .foregroundColor(.primary)
             
-            Text("Select where you want the volume bar to appear")
-                .foregroundColor(Color.primary.opacity(0.8))
+            Text("Choose where the volume bar shows up on your screen")
+                .font(.system(size: 15))
+                .foregroundColor(.secondary)
             
-            VStack(spacing: 15) {
-                ForEach(VolumeBarPosition.allCases, id: \.self) { position in
-                    Button(action: {
-                        setupState.selectedPosition = position
-                    }) {
-                        HStack {
-                            Image(systemName: iconForPosition(position))
-                                .frame(width: 20)
-                            Text(position.displayName)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                            if setupState.selectedPosition == position {
-                                Image(systemName: "checkmark.circle.fill")
-                                    .foregroundColor(.green)
+            HStack(spacing: 20) {
+                // Position options
+                VStack(spacing: 10) {
+                    ForEach(VolumeBarPosition.allCases, id: \.self) { position in
+                        PositionOptionButton(
+                            position: position,
+                            isSelected: setupState.selectedPosition == position
+                        ) {
+                            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                                setupState.selectedPosition = position
                             }
                         }
-                        .padding(.horizontal, 20)
-                        .padding(.vertical, 12)
-                        .background(
-                            setupState.selectedPosition == position ?
-                                Color.primary.opacity(0.2) : Color.primary.opacity(0.1)
-                        )
-                        .cornerRadius(10)
-                        .foregroundColor(Color.primary)
                     }
-                    .buttonStyle(.plain)
                 }
+                .frame(maxWidth: 260)
+                
+                // Preview
+                PresetPositionPreview(
+                    position: setupState.selectedPosition,
+                    size: setupState.barSize
+                )
+                .frame(width: 320, height: 200)
             }
-            .frame(maxWidth: 400)
-            
-            PresetPositionPreview(
-                position: setupState.selectedPosition,
-                size: setupState.barSize
-            )
+            .padding(.top, 10)
         }
+        .padding(.horizontal, 40)
     }
+}
+
+struct PositionOptionButton: View {
+    let position: VolumeBarPosition
+    let isSelected: Bool
+    let action: () -> Void
+    @Environment(\.colorScheme) var colorScheme
     
-    private func iconForPosition(_ position: VolumeBarPosition) -> String {
+    private var iconName: String {
         switch position {
         case .leftMiddleVertical: return "sidebar.left"
         case .bottomVertical: return "rectangle.portrait.bottomhalf.filled"
@@ -154,6 +530,44 @@ struct PositionSelectionStepView: View {
         case .bottomHorizontal: return "rectangle.bottomthird.inset.filled"
         }
     }
+    
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 12) {
+                Image(systemName: iconName)
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundColor(isSelected ? .white : .primary)
+                    .frame(width: 32, height: 32)
+                    .background(
+                        RoundedRectangle(cornerRadius: 8, style: .continuous)
+                            .fill(isSelected ? Color.accentColor : Color.primary.opacity(0.08))
+                    )
+                
+                Text(position.displayName)
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundColor(.primary)
+                
+                Spacer()
+                
+                if isSelected {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.system(size: 18))
+                        .foregroundColor(.accentColor)
+                }
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 10)
+            .background(
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .fill(isSelected ? Color.accentColor.opacity(0.12) : Color.primary.opacity(0.04))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            .stroke(isSelected ? Color.accentColor.opacity(0.3) : Color.clear, lineWidth: 1.5)
+                    )
+            )
+        }
+        .buttonStyle(.plain)
+    }
 }
 
 struct SizeStepView: View {
@@ -161,27 +575,78 @@ struct SizeStepView: View {
     @Environment(\.colorScheme) var colorScheme
     
     var body: some View {
-        VStack(spacing: 30) {
-            Text("Customize Size")
-                .font(.title)
-                .fontWeight(.semibold)
-                .foregroundColor(Color.primary)
+        VStack(spacing: 24) {
+            Text("How big should it be?")
+                .font(.system(size: 28, weight: .bold, design: .rounded))
+                .foregroundColor(.primary)
             
-            VStack(alignment: .leading, spacing: 10) {
-                Text("Size: \(Int(setupState.barSize * 100))%")
-                    .font(.headline)
-                    .foregroundColor(Color.primary)
+            Text("Adjust the size to match your preference")
+                .font(.system(size: 15))
+                .foregroundColor(.secondary)
+            
+            VStack(spacing: 20) {
+                // Size display
+                HStack {
+                    Text("Size")
+                        .font(.system(size: 15, weight: .medium))
+                        .foregroundColor(.secondary)
+                    Spacer()
+                    Text("\(Int(setupState.barSize * 100))%")
+                        .font(.system(size: 24, weight: .bold, design: .rounded))
+                        .foregroundColor(.accentColor)
+                }
                 
-                Slider(value: $setupState.barSize, in: 0.5...2.0)
-                    .accentColor(.accentColor)
+                // Slider
+                HStack(spacing: 16) {
+                    Image(systemName: "minus.circle.fill")
+                        .font(.system(size: 20))
+                        .foregroundColor(.secondary)
+                    
+                    Slider(value: $setupState.barSize, in: 0.5...2.0, step: 0.25)
+                        .accentColor(.accentColor)
+                    
+                    Image(systemName: "plus.circle.fill")
+                        .font(.system(size: 20))
+                        .foregroundColor(.secondary)
+                }
+                
+                // Preset buttons
+                HStack(spacing: 10) {
+                    ForEach([0.5, 0.75, 1.0, 1.5, 2.0], id: \.self) { size in
+                        Button(action: {
+                            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                                setupState.barSize = CGFloat(size)
+                            }
+                        }) {
+                            Text("\(Int(size * 100))%")
+                                .font(.system(size: 13, weight: .semibold))
+                                .foregroundColor(abs(setupState.barSize - CGFloat(size)) < 0.01 ? .white : .primary)
+                                .padding(.horizontal, 14)
+                                .padding(.vertical, 8)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                                        .fill(abs(setupState.barSize - CGFloat(size)) < 0.01 ? Color.accentColor : Color.primary.opacity(0.08))
+                                )
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
             }
-            .frame(maxWidth: 300)
+            .padding(24)
+            .background(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .fill(Color.primary.opacity(0.04))
+            )
+            .frame(maxWidth: 400)
             
+            // Preview
             PresetPositionPreview(
                 position: setupState.selectedPosition,
                 size: setupState.barSize
             )
+            .frame(width: 320, height: 200)
         }
+        .padding(.horizontal, 40)
     }
 }
 
@@ -189,61 +654,112 @@ struct KeyboardShortcutsStepView: View {
     @Environment(\.colorScheme) var colorScheme
     
     var body: some View {
-        VStack(spacing: 30) {
-            Image(systemName: "keyboard")
-                .font(.system(size: 60))
-                .foregroundColor(Color.primary.opacity(0.8))
-            
-            Text("Keyboard Shortcuts")
-                .font(.title)
-                .fontWeight(.semibold)
-                .foregroundColor(Color.primary)
-            
-            Text("Control volume from anywhere with these shortcuts")
-                .foregroundColor(Color.primary.opacity(0.8))
-                .multilineTextAlignment(.center)
-            
-            VStack(alignment: .leading, spacing: 16) {
-                KeyboardShortcutRow(keys: "⌘⇧↑", description: "Increase Volume")
-                KeyboardShortcutRow(keys: "⌘⇧↓", description: "Decrease Volume")
-                KeyboardShortcutRow(keys: "⌘⇧M", description: "Toggle Mute")
+        VStack(spacing: 24) {
+            // Icon
+            ZStack {
+                Circle()
+                    .fill(
+                        RadialGradient(
+                            colors: [
+                                Color.accentColor.opacity(0.15),
+                                Color.accentColor.opacity(0.03),
+                                Color.clear
+                            ],
+                            center: .center,
+                            startRadius: 20,
+                            endRadius: 80
+                        )
+                    )
+                    .frame(width: 140, height: 140)
+                
+                Image(systemName: "keyboard.fill")
+                    .font(.system(size: 44, weight: .light))
+                    .foregroundStyle(
+                        LinearGradient(
+                            colors: [Color.accentColor, Color.accentColor.opacity(0.7)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
             }
-            .padding(20)
-            .background(
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(Color.primary.opacity(0.1))
-            )
-            .frame(maxWidth: 400)
             
-            Text("Plus hardware volume keys (F11/F12) work too!")
-                .font(.caption)
-                .foregroundColor(Color.primary.opacity(0.6))
+            VStack(spacing: 8) {
+                Text("Control with your keyboard")
+                    .font(.system(size: 28, weight: .bold, design: .rounded))
+                    .foregroundColor(.primary)
+                
+                Text("Use these shortcuts to quickly adjust volume")
+                    .font(.system(size: 15))
+                    .foregroundColor(.secondary)
+            }
+            
+            VStack(spacing: 2) {
+                ShortcutRow(keys: ["⌘", "⇧", "↑"], action: "Volume Up")
+                ShortcutRow(keys: ["⌘", "⇧", "↓"], action: "Volume Down")
+                ShortcutRow(keys: ["⌘", "⇧", "M"], action: "Mute / Unmute")
+            }
+            .padding(16)
+            .background(
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .fill(Color.primary.opacity(0.04))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            .stroke(Color.primary.opacity(0.04), lineWidth: 1)
+                    )
+            )
+            .frame(maxWidth: 360)
+            
+            HStack(spacing: 6) {
+                Image(systemName: "info.circle.fill")
+                    .font(.system(size: 12))
+                Text("Hardware volume keys (F11/F12) also work!")
+                    .font(.system(size: 13, weight: .medium))
+            }
+            .foregroundColor(.secondary.opacity(0.7))
+            .padding(.top, 4)
         }
+        .padding(.horizontal, 40)
     }
 }
 
-struct KeyboardShortcutRow: View {
-    let keys: String
-    let description: String
+struct ShortcutRow: View {
+    let keys: [String]
+    let action: String
     @Environment(\.colorScheme) var colorScheme
     
     var body: some View {
         HStack {
-            Text(keys)
-                .font(.system(size: 16, weight: .bold, design: .monospaced))
-                .foregroundColor(Color.primary)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 6)
-                .background(
-                    RoundedRectangle(cornerRadius: 6)
-                        .fill(Color.primary.opacity(0.15))
-                )
-            
-            Text(description)
-                .foregroundColor(Color.primary.opacity(0.8))
+            HStack(spacing: 4) {
+                ForEach(keys, id: \.self) { key in
+                    Text(key)
+                        .font(.system(size: 14, weight: .medium, design: .rounded))
+                        .foregroundColor(.primary)
+                        .frame(width: 30, height: 28)
+                        .background(
+                            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                                .fill(colorScheme == .dark
+                                    ? Color(white: 0.22)
+                                    : Color.white)
+                                .shadow(color: colorScheme == .dark
+                                    ? Color.black.opacity(0.3)
+                                    : Color.black.opacity(0.08),
+                                    radius: 1, x: 0, y: 1)
+                        )
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                                .stroke(Color.primary.opacity(colorScheme == .dark ? 0.15 : 0.1), lineWidth: 0.5)
+                        )
+                }
+            }
             
             Spacer()
+            
+            Text(action)
+                .font(.system(size: 13, weight: .medium))
+                .foregroundColor(.secondary)
         }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 10)
     }
 }
 
@@ -253,66 +769,186 @@ struct AudioDeviceStepView: View {
     @Environment(\.colorScheme) var colorScheme
     
     var body: some View {
-        VStack(spacing: 20) {
-            Text("Audio Device Selection")
-                .font(.title)
-                .fontWeight(.semibold)
-                .foregroundColor(Color.primary)
+        VStack(spacing: 24) {
+            Image(systemName: "hifispeaker.2.fill")
+                .font(.system(size: 48, weight: .light))
+                .foregroundColor(.accentColor)
             
-            Text("Click and hold the volume bar to see available audio devices")
-                .foregroundColor(Color.primary.opacity(0.8))
+            Text("Switch audio devices")
+                .font(.system(size: 28, weight: .bold, design: .rounded))
+                .foregroundColor(.primary)
             
-            ScrollView {
-                LazyVStack(spacing: 8) {
-                    ForEach(audioManager.outputDevices, id: \.deviceID) { device in
-                        AudioDeviceRow(
-                            device: device,
-                            isSelected: device.deviceID == audioManager.currentOutputDevice?.deviceID
-                        )
-                        .onTapGesture {
-                            audioManager.setOutputDevice(device)
-                        }
-                    }
+            Text("Long-press the volume bar to quickly switch outputs")
+                .font(.system(size: 15))
+                .foregroundColor(.secondary)
+                .multilineTextAlignment(.center)
+            
+            // Device list preview
+            VStack(spacing: 8) {
+                ForEach(audioManager.outputDevices.prefix(4), id: \.deviceID) { device in
+                    DevicePreviewRow(
+                        device: device,
+                        isSelected: device.deviceID == audioManager.currentOutputDevice?.deviceID
+                    )
+                }
+                
+                if audioManager.outputDevices.isEmpty {
+                    Text("Loading devices...")
+                        .font(.system(size: 14))
+                        .foregroundColor(.secondary)
+                        .padding(.vertical, 20)
                 }
             }
-            .frame(height: 200)
-            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
+            .padding(16)
+            .background(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .fill(Color.primary.opacity(0.04))
+            )
+            .frame(maxWidth: 360)
         }
+        .padding(.horizontal, 40)
         .onAppear {
             audioManager.loadDevices()
         }
     }
 }
 
+struct DevicePreviewRow: View {
+    let device: AudioDevice
+    let isSelected: Bool
+    
+    private var iconName: String {
+        let name = device.name.lowercased()
+        if name.contains("airpods") || name.contains("headphones") || name.contains("bluetooth") {
+            return "headphones"
+        } else if name.contains("built-in") || name.contains("speakers") {
+            return "speaker.wave.2.fill"
+        } else if name.contains("hdmi") || name.contains("display") {
+            return "tv"
+        }
+        return "speaker.fill"
+    }
+    
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: iconName)
+                .font(.system(size: 16, weight: .medium))
+                .foregroundColor(isSelected ? .accentColor : .secondary)
+                .frame(width: 32, height: 32)
+                .background(
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .fill(isSelected ? Color.accentColor.opacity(0.15) : Color.primary.opacity(0.06))
+                )
+            
+            Text(device.name)
+                .font(.system(size: 14, weight: isSelected ? .semibold : .regular))
+                .foregroundColor(.primary)
+                .lineLimit(1)
+            
+            Spacer()
+            
+            if isSelected {
+                Image(systemName: "checkmark.circle.fill")
+                    .font(.system(size: 16))
+                    .foregroundColor(.accentColor)
+            }
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
+        .background(
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .fill(isSelected ? Color.accentColor.opacity(0.08) : Color.clear)
+        )
+    }
+}
+
 struct CompletionStepView: View {
     @ObservedObject var setupState: SetupState
     @Environment(\.colorScheme) var colorScheme
+    @State private var checkmarkScale: CGFloat = 0
     
     var body: some View {
-        VStack(spacing: 20) {
-            Image(systemName: "checkmark.circle.fill")
-                .font(.system(size: 80))
-                .foregroundColor(.green)
+        VStack(spacing: 24) {
+            Spacer()
             
-            Text("All Set!")
-                .font(.largeTitle)
-                .fontWeight(.bold)
-                .foregroundColor(Color.primary)
-            
-            VStack(alignment: .leading, spacing: 8) {
-                Text("✓ Position: \(setupState.selectedPosition.displayName)")
-                Text("✓ Size: \(Int(setupState.barSize * 100))%")
-                Text("✓ Keyboard shortcuts enabled")
-                Text("✓ Audio device selection enabled")
+            // Success checkmark
+            ZStack {
+                Circle()
+                    .fill(Color.green.opacity(0.15))
+                    .frame(width: 120, height: 120)
+                
+                Image(systemName: "checkmark.circle.fill")
+                    .font(.system(size: 72, weight: .medium))
+                    .foregroundColor(.green)
             }
-            .font(.title3)
-            .foregroundColor(Color.primary.opacity(0.8))
+            .scaleEffect(checkmarkScale)
+            .onAppear {
+                withAnimation(.spring(response: 0.5, dampingFraction: 0.6).delay(0.2)) {
+                    checkmarkScale = 1.0
+                }
+            }
             
-            Text("The volume bar will appear when you adjust system volume")
-                .font(.caption)
-                .foregroundColor(Color.primary.opacity(0.6))
-                .multilineTextAlignment(.center)
+            VStack(spacing: 12) {
+                Text("You're all set!")
+                    .font(.system(size: 32, weight: .bold, design: .rounded))
+                    .foregroundColor(.primary)
+                
+                Text("VolumeGlass is ready to use")
+                    .font(.system(size: 17))
+                    .foregroundColor(.secondary)
+            }
+            
+            // Summary
+            VStack(spacing: 12) {
+                SummaryRow(icon: "mappin.circle.fill", label: "Position", value: setupState.selectedPosition.displayName)
+                SummaryRow(icon: "arrow.up.left.and.arrow.down.right", label: "Size", value: "\(Int(setupState.barSize * 100))%")
+            }
+            .padding(20)
+            .background(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .fill(Color.primary.opacity(0.04))
+            )
+            .frame(maxWidth: 360)
+            
+            HStack(spacing: 8) {
+                Image(systemName: "gear")
+                    .font(.system(size: 13))
+                Text("You can change settings anytime from the menu bar")
+                    .font(.system(size: 13))
+            }
+            .foregroundColor(.secondary)
+            .padding(.top, 8)
+            
+            Spacer()
         }
+        .padding(.horizontal, 40)
+    }
+}
+
+struct SummaryRow: View {
+    let icon: String
+    let label: String
+    let value: String
+    
+    var body: some View {
+        HStack {
+            Image(systemName: icon)
+                .font(.system(size: 16, weight: .medium))
+                .foregroundColor(.accentColor)
+                .frame(width: 28)
+            
+            Text(label)
+                .font(.system(size: 14, weight: .medium))
+                .foregroundColor(.secondary)
+            
+            Spacer()
+            
+            Text(value)
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundColor(.primary)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
     }
 }
 
@@ -323,65 +959,78 @@ struct PresetPositionPreview: View {
     
     var body: some View {
         ZStack {
-            RoundedRectangle(cornerRadius: 12)
-                .stroke(Color.primary.opacity(0.3), lineWidth: 2)
-                .frame(width: 400, height: 250)
+            // Screen representation
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(colorScheme == .dark ? Color(white: 0.15) : Color(white: 0.95))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .stroke(Color.primary.opacity(0.15), lineWidth: 1)
+                )
             
-            VolumeBarPreview(
+            // Menu bar
+            VStack {
+                RoundedRectangle(cornerRadius: 2)
+                    .fill(Color.primary.opacity(0.1))
+                    .frame(height: 8)
+                    .padding(.horizontal, 8)
+                    .padding(.top, 8)
+                Spacer()
+            }
+            
+            // Volume bar preview
+            VolumeBarMiniPreview(
                 size: size,
                 isVertical: position.isVertical,
-                volume: 0.6
+                volume: 0.65
             )
-            .position(previewPositionForPosition(position))
+            .position(previewPosition(for: position))
         }
-        .frame(width: 400, height: 250)
     }
     
-    private func previewPositionForPosition(_ position: VolumeBarPosition) -> CGPoint {
+    private func previewPosition(for position: VolumeBarPosition) -> CGPoint {
+        let containerWidth: CGFloat = 320
+        let containerHeight: CGFloat = 200
+        let padding: CGFloat = 24
+        
         switch position {
         case .leftMiddleVertical:
-            return CGPoint(x: 40, y: 125)
+            return CGPoint(x: padding, y: containerHeight / 2)
         case .bottomVertical:
-            return CGPoint(x: 200, y: 210)
+            return CGPoint(x: containerWidth / 2, y: containerHeight - padding)
         case .rightVertical:
-            return CGPoint(x: 360, y: 125)
+            return CGPoint(x: containerWidth - padding, y: containerHeight / 2)
         case .topHorizontal:
-            return CGPoint(x: 200, y: 40)
+            return CGPoint(x: containerWidth / 2, y: padding + 10)
         case .bottomHorizontal:
-            return CGPoint(x: 200, y: 210)
+            return CGPoint(x: containerWidth / 2, y: containerHeight - padding)
         }
     }
 }
 
-struct VolumeBarPreview: View {
+struct VolumeBarMiniPreview: View {
     let size: CGFloat
     let isVertical: Bool
     let volume: CGFloat
     @Environment(\.colorScheme) var colorScheme
     
-    var barWidth: CGFloat { 10 * size }
-    var barHeight: CGFloat { 60 * size }
-    
-    var barColor: Color {
-        colorScheme == .dark ? .white : Color(red: 0.2, green: 0.25, blue: 0.3)
-    }
+    private var barWidth: CGFloat { isVertical ? 8 * size : 50 * size }
+    private var barHeight: CGFloat { isVertical ? 50 * size : 8 * size }
     
     var body: some View {
-        RoundedRectangle(cornerRadius: 6 * size, style: .continuous)
-            .fill(Color.primary.opacity(0.3))
-            .frame(
-                width: isVertical ? barWidth : barHeight,
-                height: isVertical ? barHeight : barWidth
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 6 * size, style: .continuous)
-                    .fill(barColor)
-                    .frame(
-                        width: isVertical ? barWidth : barHeight * volume,
-                        height: isVertical ? barHeight * volume : barWidth
-                    ),
-                alignment: isVertical ? .bottom : .leading
-            )
+        ZStack(alignment: isVertical ? .bottom : .leading) {
+            // Track
+            RoundedRectangle(cornerRadius: 4 * size, style: .continuous)
+                .fill(Color.primary.opacity(0.15))
+                .frame(width: barWidth, height: barHeight)
+            
+            // Fill
+            RoundedRectangle(cornerRadius: 4 * size, style: .continuous)
+                .fill(colorScheme == .dark ? Color.white : Color(white: 0.25))
+                .frame(
+                    width: isVertical ? barWidth : barWidth * volume,
+                    height: isVertical ? barHeight * volume : barHeight
+                )
+        }
     }
 }
 
@@ -427,4 +1076,3 @@ struct AudioDeviceRow: View {
         }
     }
 }
-

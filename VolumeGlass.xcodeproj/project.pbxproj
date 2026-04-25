@@ -10,15 +10,30 @@
 		6150FAA62E7EFEAB0089C2B4 /* VolumeGlass.icon in Resources */ = {isa = PBXBuildFile; fileRef = 6150FAA52E7EFEAA0089C2B4 /* VolumeGlass.icon */; };
 		6194BE1C2E7EE7BE001ECB0A /* CoreAudioKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6194BE0D2E7EE72F001ECB0A /* CoreAudioKit.framework */; };
 		6194BE1E2E7EE7BF001ECB0A /* CoreAudio.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6194BE0E2E7EE72F001ECB0A /* CoreAudio.framework */; };
+		AA01VG01AVKIT00000000001A /* AVKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AA01VG01AVKIT00000000001B /* AVKit.framework */; };
 /* End PBXBuildFile section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		616E15052F58F07F00CD61E2 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		6150FAA52E7EFEAA0089C2B4 /* VolumeGlass.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = VolumeGlass.icon; sourceTree = "<group>"; };
+		616E15072F58F07F00CD61E2 /* VolumeGlassUpdater */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = VolumeGlassUpdater; sourceTree = BUILT_PRODUCTS_DIR; };
 		6194BDFC2E7EE707001ECB0A /* VolumeGlass.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = VolumeGlass.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		6194BE0B2E7EE720001ECB0A /* AVFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AVFoundation.framework; path = System/Library/Frameworks/AVFoundation.framework; sourceTree = SDKROOT; };
 		6194BE0D2E7EE72F001ECB0A /* CoreAudioKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreAudioKit.framework; path = System/Library/Frameworks/CoreAudioKit.framework; sourceTree = SDKROOT; };
 		6194BE0E2E7EE72F001ECB0A /* CoreAudio.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreAudio.framework; path = System/Library/Frameworks/CoreAudio.framework; sourceTree = SDKROOT; };
 		6194BE0F2E7EE72F001ECB0A /* CoreAudioTypes.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreAudioTypes.framework; path = System/Library/Frameworks/CoreAudioTypes.framework; sourceTree = SDKROOT; };
+		AA01VG01AVKIT00000000001B /* AVKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AVKit.framework; path = System/Library/Frameworks/AVKit.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -32,6 +47,11 @@
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
+		616E15082F58F07F00CD61E2 /* VolumeGlassUpdater */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = VolumeGlassUpdater;
+			sourceTree = "<group>";
+		};
 		6194BDFE2E7EE707001ECB0A /* VolumeGlass */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
@@ -43,12 +63,20 @@
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		616E15042F58F07F00CD61E2 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		6194BDF92E7EE707001ECB0A /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 				6194BE1C2E7EE7BE001ECB0A /* CoreAudioKit.framework in Frameworks */,
 				6194BE1E2E7EE7BF001ECB0A /* CoreAudio.framework in Frameworks */,
+				AA01VG01AVKIT00000000001A /* AVKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -59,6 +87,7 @@
 			isa = PBXGroup;
 			children = (
 				6194BDFE2E7EE707001ECB0A /* VolumeGlass */,
+				616E15082F58F07F00CD61E2 /* VolumeGlassUpdater */,
 				6194BE0A2E7EE720001ECB0A /* Frameworks */,
 				6194BDFD2E7EE707001ECB0A /* Products */,
 			);
@@ -68,6 +97,7 @@
 			isa = PBXGroup;
 			children = (
 				6194BDFC2E7EE707001ECB0A /* VolumeGlass.app */,
+				616E15072F58F07F00CD61E2 /* VolumeGlassUpdater */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -80,6 +110,7 @@
 				6194BE0D2E7EE72F001ECB0A /* CoreAudioKit.framework */,
 				6194BE0F2E7EE72F001ECB0A /* CoreAudioTypes.framework */,
 				6194BE0B2E7EE720001ECB0A /* AVFoundation.framework */,
+				AA01VG01AVKIT00000000001B /* AVKit.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -87,6 +118,28 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		616E15062F58F07F00CD61E2 /* VolumeGlassUpdater */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 616E150B2F58F07F00CD61E2 /* Build configuration list for PBXNativeTarget "VolumeGlassUpdater" */;
+			buildPhases = (
+				616E15032F58F07F00CD61E2 /* Sources */,
+				616E15042F58F07F00CD61E2 /* Frameworks */,
+				616E15052F58F07F00CD61E2 /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				616E15082F58F07F00CD61E2 /* VolumeGlassUpdater */,
+			);
+			name = VolumeGlassUpdater;
+			packageProductDependencies = (
+			);
+			productName = VolumeGlassUpdater;
+			productReference = 616E15072F58F07F00CD61E2 /* VolumeGlassUpdater */;
+			productType = "com.apple.product-type.tool";
+		};
 		6194BDFB2E7EE707001ECB0A /* VolumeGlass */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 6194BE072E7EE70A001ECB0A /* Build configuration list for PBXNativeTarget "VolumeGlass" */;
@@ -94,6 +147,7 @@
 				6194BDF82E7EE707001ECB0A /* Sources */,
 				6194BDF92E7EE707001ECB0A /* Frameworks */,
 				6194BDFA2E7EE707001ECB0A /* Resources */,
+				616E150E2F58F12E00CD61E2 /* ShellScript */,
 			);
 			buildRules = (
 			);
@@ -116,9 +170,12 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
-				LastSwiftUpdateCheck = 2600;
+				LastSwiftUpdateCheck = 2630;
 				LastUpgradeCheck = 2600;
 				TargetAttributes = {
+					616E15062F58F07F00CD61E2 = {
+						CreatedOnToolsVersion = 26.3;
+					};
 					6194BDFB2E7EE707001ECB0A = {
 						CreatedOnToolsVersion = 26.0;
 					};
@@ -139,6 +196,7 @@
 			projectRoot = "";
 			targets = (
 				6194BDFB2E7EE707001ECB0A /* VolumeGlass */,
+				616E15062F58F07F00CD61E2 /* VolumeGlassUpdater */,
 			);
 		};
 /* End PBXProject section */
@@ -154,7 +212,34 @@
 		};
 /* End PBXResourcesBuildPhase section */
 
+/* Begin PBXShellScriptBuildPhase section */
+		616E150E2F58F12E00CD61E2 /* ShellScript */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"$SRCROOT/build_helper.sh\"\n";
+		};
+/* End PBXShellScriptBuildPhase section */
+
 /* Begin PBXSourcesBuildPhase section */
+		616E15032F58F07F00CD61E2 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		6194BDF82E7EE707001ECB0A /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -165,6 +250,36 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin XCBuildConfiguration section */
+		616E150C2F58F07F00CD61E2 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = AKA3JATV8R;
+				ENABLE_HARDENED_RUNTIME = YES;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.sangeetha.VolumeGlassUpdater;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		616E150D2F58F07F00CD61E2 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = AKA3JATV8R;
+				ENABLE_HARDENED_RUNTIME = YES;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.sangeetha.VolumeGlassUpdater;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
 		6194BE052E7EE70A001ECB0A /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -203,7 +318,7 @@
 				DEVELOPMENT_TEAM = 6Z6F9G2JN5;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
-				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_NO_COMMON_BLOCKS = YES;
@@ -267,7 +382,7 @@
 				DEVELOPMENT_TEAM = 6Z6F9G2JN5;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
-				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
@@ -293,22 +408,22 @@
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 6Z6F9G2JN5;
-				ENABLE_APP_SANDBOX = YES;
+				CURRENT_PROJECT_VERSION = 12;
+				DEVELOPMENT_TEAM = AKA3JATV8R;
+				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
-				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = VolumeGlass/Info.plist;
-				INFOPLIST_KEY_LSApplicationCategoryType = "";
+				INFOPLIST_KEY_CFBundleDisplayName = VolumeGlass;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.aarush.VolumeGlass;
+				MARKETING_VERSION = 2.1.4;
+				PRODUCT_BUNDLE_IDENTIFIER = com.sangeetha.VolumeGlass;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -328,22 +443,22 @@
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 6Z6F9G2JN5;
-				ENABLE_APP_SANDBOX = YES;
+				CURRENT_PROJECT_VERSION = 12;
+				DEVELOPMENT_TEAM = AKA3JATV8R;
+				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
-				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = VolumeGlass/Info.plist;
-				INFOPLIST_KEY_LSApplicationCategoryType = "";
+				INFOPLIST_KEY_CFBundleDisplayName = VolumeGlass;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.aarush.VolumeGlass;
+				MARKETING_VERSION = 2.1.4;
+				PRODUCT_BUNDLE_IDENTIFIER = com.sangeetha.VolumeGlass;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -358,6 +473,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		616E150B2F58F07F00CD61E2 /* Build configuration list for PBXNativeTarget "VolumeGlassUpdater" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				616E150C2F58F07F00CD61E2 /* Debug */,
+				616E150D2F58F07F00CD61E2 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		6194BDF72E7EE707001ECB0A /* Build configuration list for PBXProject "VolumeGlass" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (

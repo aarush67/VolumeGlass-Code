@@ -47,10 +47,15 @@ class VolumeMonitor: ObservableObject {
     @Published var currentVolume: Float = 0.5
     @Published var isVolumeChanging = false
     @Published var isMuted = false
+    /// The last volume level before the system was muted. Used so that
+    /// pressing volume up/down after mute adjusts relative to the previous level.
+    var lastVolumeBeforeMute: Float = 0.5
     
     fileprivate var audioDeviceID: AudioDeviceID = 0
     private var volumeChangeTimer: Timer?
-    private var overlayWindows: [VolumeOverlayWindow] = []
+    var overlayWindows: [VolumeOverlayWindow] = []
+    var notchWindows: [NotchOverlayWindow] = []
+    var notchAttachedWindows: [NotchAttachedWindow] = []
     private var cancellables = Set<AnyCancellable>()
     
     var setupState: SetupState?
@@ -64,11 +69,34 @@ class VolumeMonitor: ObservableObject {
     }
     
     deinit {
+        print("💀 VolumeMonitor deinit called")
         cleanupListeners()
-        for window in overlayWindows {
+        destroyOverlays()
+    }
+    
+    func destroyOverlays() {
+        print("🗑️ Destroying \(overlayWindows.count) overlay windows and \(notchWindows.count) notch windows")
+        let windowsToDestroy = overlayWindows
+        overlayWindows.removeAll()
+        
+        for window in windowsToDestroy {
+            print("   Closing window: \(window)")
             window.close()
         }
-        overlayWindows.removeAll()
+
+        let notchToDestroy = notchWindows
+        notchWindows.removeAll()
+
+        for window in notchToDestroy {
+            window.close()
+        }
+
+        let notchAttachedToDestroy = notchAttachedWindows
+        notchAttachedWindows.removeAll()
+
+        for window in notchAttachedToDestroy {
+            window.close()
+        }
     }
     
     func createVolumeOverlay() {
@@ -105,6 +133,22 @@ class VolumeMonitor: ObservableObject {
             overlayWindows.append(window)
             
             print("✅ Created overlay on: \(screen.localizedName)")
+
+            // Create notch overlay pill if enabled and screen has a notch
+            if setupState?.showInNotch == true && NotchOverlayWindow.screenHasNotch(screen) {
+                let notchWindow = NotchOverlayWindow(volumeMonitor: self, screen: screen)
+                notchWindow.showIndicator()
+                notchWindows.append(notchWindow)
+                print("🔲 Created notch pill overlay on: \(screen.localizedName)")
+            }
+
+            // Create notch-attached bar if enabled and screen has a notch
+            if setupState?.showNotchBar == true && NotchAttachedWindow.screenHasNotch(screen) {
+                let attachedWindow = NotchAttachedWindow(volumeMonitor: self, screen: screen)
+                attachedWindow.showIndicator()
+                notchAttachedWindows.append(attachedWindow)
+                print("🖥️ Created notch-attached bar on: \(screen.localizedName)")
+            }
         }
         
         print("✅ Total overlays created: \(overlayWindows.count)")
@@ -222,7 +266,14 @@ class VolumeMonitor: ObservableObject {
         
         if result == noErr {
             DispatchQueue.main.async { [weak self] in
-                self?.isMuted = muted != 0
+                let nowMuted = muted != 0
+                // If we've just become muted, remember the last volume level
+                if nowMuted && self?.isMuted == false {
+                    if let current = self?.currentVolume {
+                        self?.lastVolumeBeforeMute = current
+                    }
+                }
+                self?.isMuted = nowMuted
             }
         }
     }
@@ -236,6 +287,8 @@ class VolumeMonitor: ObservableObject {
             mElement: kAudioObjectPropertyElementMain
         )
         
+        print("🔊 [setSystemVolume] Setting volume to: \(newVolume) (0.0 = mute, 1.0 = max)")
+        
         let result = AudioObjectSetPropertyData(
             audioDeviceID,
             &address,
@@ -246,10 +299,37 @@ class VolumeMonitor: ObservableObject {
         )
         
         if result == noErr {
+            print("✅ [setSystemVolume] Volume set successfully")
             DispatchQueue.main.async { [weak self] in
-                self?.currentVolume = volume
-                self?.startVolumeChangeIndicator()
+                guard let self = self else { return }
+                // If currently muted, unmute before applying the new volume so
+                // key-based adjustments behave as users expect.
+                if self.isMuted {
+                    var mutedFlag: UInt32 = 0
+                    var muteAddr = AudioObjectPropertyAddress(
+                        mSelector: kAudioDevicePropertyMute,
+                        mScope: kAudioDevicePropertyScopeOutput,
+                        mElement: kAudioObjectPropertyElementMain
+                    )
+                    let muteResult = AudioObjectSetPropertyData(
+                        self.audioDeviceID,
+                        &muteAddr,
+                        0,
+                        nil,
+                        UInt32(MemoryLayout<UInt32>.size),
+                        &mutedFlag
+                    )
+                    if muteResult == noErr {
+                        self.isMuted = false
+                        print("🔊 [setSystemVolume] Unmuted due to volume change")
+                    }
+                }
+
+                self.currentVolume = volume
+                self.startVolumeChangeIndicator()
             }
+        } else {
+            print("❌ [setSystemVolume] Failed to set volume. Result: \(result)")
         }
     }
     
@@ -262,7 +342,14 @@ class VolumeMonitor: ObservableObject {
             mElement: kAudioObjectPropertyElementMain
         )
         
-        AudioObjectSetPropertyData(
+        print("🔇 [toggleMute] Mute state changing from \(isMuted) to \(!isMuted)")
+        // If we're muting, remember the last audible volume so we can adjust
+        // relative to it when the user presses volume keys while muted.
+        if !isMuted {
+            lastVolumeBeforeMute = currentVolume
+        }
+        
+        let result = AudioObjectSetPropertyData(
             audioDeviceID,
             &address,
             0,
@@ -270,6 +357,13 @@ class VolumeMonitor: ObservableObject {
             size,
             &muted
         )
+        
+        if result == noErr {
+            print("✅ [toggleMute] Mute toggled successfully")
+            checkMuteStatus()
+        } else {
+            print("❌ [toggleMute] Failed to toggle mute. Result: \(result)")
+        }
     }
     
     func startVolumeChangeIndicator() {
@@ -277,11 +371,21 @@ class VolumeMonitor: ObservableObject {
             self?.isVolumeChanging = true
             self?.volumeChangeTimer?.invalidate()
             
+            // Use the dismiss time from settings if available, otherwise fall back to 2.0s
+            let timeout = Double(self?.setupState?.volumeDismissTime ?? 2.0)
             self?.volumeChangeTimer = Timer.scheduledTimer(
-                withTimeInterval: 2.0,
+                withTimeInterval: timeout,
                 repeats: false
             ) { [weak self] _ in
-                self?.isVolumeChanging = false
+                guard let self = self else { return }
+                self.isVolumeChanging = false
+                // Ensure UI consumers retract the main volume bar when volume
+                // has stopped changing (covers edge-cases with multiple overlays).
+                NotificationCenter.default.post(
+                    name: NSNotification.Name("VolumeBarVisibilityChanged"),
+                    object: nil,
+                    userInfo: ["isVisible": false]
+                )
             }
         }
     }
@@ -307,6 +411,19 @@ class VolumeMonitor: ObservableObject {
             audioDeviceID,
             &address,
             volumeChangeCallback,
+            Unmanaged.passUnretained(self).toOpaque()
+        )
+
+        var deviceAddress = AudioObjectPropertyAddress(
+            mSelector: kAudioHardwarePropertyDefaultOutputDevice,
+            mScope: kAudioObjectPropertyScopeGlobal,
+            mElement: kAudioObjectPropertyElementMain
+        )
+
+        AudioObjectRemovePropertyListener(
+            AudioObjectID(kAudioObjectSystemObject),
+            &deviceAddress,
+            deviceChangeCallback,
             Unmanaged.passUnretained(self).toOpaque()
         )
     }
