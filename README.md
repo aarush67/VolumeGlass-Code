@@ -1,7 +1,7 @@
 # VolumeGlass
 
 <p align="center">
-  <img src="https://img.shields.io/badge/macOS-13.0+-blue.svg" alt="macOS 13.0+">
+  <img src="https://img.shields.io/badge/macOS-26.0+-blue.svg" alt="macOS 26.0+">
   <img src="https://img.shields.io/badge/Swift-5.9-orange.svg" alt="Swift 5.9">
   <img src="https://img.shields.io/badge/SwiftUI-Latest-purple.svg" alt="SwiftUI">
   <img src="https://img.shields.io/badge/license-CC%20BY--NC--ND%204.0-lightgrey.svg" alt="License">
