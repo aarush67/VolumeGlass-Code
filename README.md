@@ -60,7 +60,7 @@
 
 ## Build from Source
 
-**Requirements:** macOS 13.0+, Xcode 15.0+, Swift 5.9+
+**Requirements:** macOS 26.0+, Xcode 15.0+, Swift 5.9+
 
 ```bash
 git clone https://github.com/aarush67/VolumeGlass-Code.git
