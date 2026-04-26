@@ -190,6 +190,7 @@ class SetupState: ObservableObject {
     @Published var volumeDismissTime: Double = 2.0
     @Published var volumeBarColorMode: VolumeBarColorMode = .system
     @Published var customBarColorHex: String = "#FFFFFF"
+    @Published var fineStepDivisor: Float = 3.0
 
     /// Read current shortcuts from UserDefaults — safe to call from any context.
     static var currentShortcuts: (volumeUp: ShortcutKey, volumeDown: ShortcutKey, mute: ShortcutKey) {
@@ -198,6 +199,14 @@ class SetupState: ObservableObject {
             loadShortcut(forKey: "shortcutVolumeDown") ?? .defaultVolumeDown,
             loadShortcut(forKey: "shortcutMute") ?? .defaultMute
         )
+    }
+    
+    static var currentFineStepDivisor: Float {
+        let stored = UserDefaults.standard.float(forKey: "fineStepDivisor")
+        if stored > 0 {
+            return max(1.0, min(10.0, stored))
+        }
+        return 3.0
     }
 
     private static func loadShortcut(forKey key: String) -> ShortcutKey? {
@@ -268,6 +277,12 @@ class SetupState: ObservableObject {
         }
         if let savedHex = UserDefaults.standard.string(forKey: "customBarColorHex") {
             self.customBarColorHex = savedHex
+        }
+        if UserDefaults.standard.object(forKey: "fineStepDivisor") != nil {
+            let stored = UserDefaults.standard.float(forKey: "fineStepDivisor")
+            if stored > 0 {
+                self.fineStepDivisor = max(1.0, min(10.0, stored))
+            }
         }
 
         UserDefaults.standard.synchronize()
@@ -357,6 +372,15 @@ class SetupState: ObservableObject {
         UserDefaults.standard.set(hexColor, forKey: "customBarColorHex")
         UserDefaults.standard.synchronize()
         print("🎨 Custom bar color updated to: \(hexColor)")
+        NotificationCenter.default.post(name: NSNotification.Name("SettingsChanged"), object: nil)
+    }
+    
+    func updateFineStepDivisor(_ divisor: Float) {
+        let clamped = max(1.0, min(10.0, divisor))
+        fineStepDivisor = clamped
+        UserDefaults.standard.set(clamped, forKey: "fineStepDivisor")
+        UserDefaults.standard.synchronize()
+        print("🎚️ Fine step divisor updated to: \(clamped)")
         NotificationCenter.default.post(name: NSNotification.Name("SettingsChanged"), object: nil)
     }
 

@@ -607,13 +607,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 print("🎵 [GLOBAL] System key: keyCode=\(keyCode), pressed=\(keyPressed)")
                 
                 if keyPressed {
+                    let fineStep = event.modifierFlags.contains(.option)
                     switch keyCode {
                     case NX_KEYTYPE_SOUND_UP:
                         print("🔊 [GLOBAL] Volume Up detected via media key")
-                        self.handleVolumeUp()
+                        self.handleVolumeUp(fineStep: fineStep)
                     case NX_KEYTYPE_SOUND_DOWN:
                         print("🔊 [GLOBAL] Volume Down detected via media key")
-                        self.handleVolumeDown()
+                        self.handleVolumeDown(fineStep: fineStep)
                     case NX_KEYTYPE_MUTE:
                         print("🔊 [GLOBAL] Mute detected via media key")
                         self.handleMuteToggle()
@@ -631,10 +632,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 let upMods   = NSEvent.ModifierFlags(rawValue: sc.volumeUp.modifiers).intersection([.command, .shift, .option, .control])
                 let downMods = NSEvent.ModifierFlags(rawValue: sc.volumeDown.modifiers).intersection([.command, .shift, .option, .control])
                 let muteMods = NSEvent.ModifierFlags(rawValue: sc.mute.modifiers).intersection([.command, .shift, .option, .control])
+                let fineStep = event.modifierFlags.contains(.option)
                 if keyCode == sc.volumeUp.keyCode && flags == upMods {
-                    self.handleVolumeUp()
+                    self.handleVolumeUp(fineStep: fineStep)
                 } else if keyCode == sc.volumeDown.keyCode && flags == downMods {
-                    self.handleVolumeDown()
+                    self.handleVolumeDown(fineStep: fineStep)
                 } else if keyCode == sc.mute.keyCode && flags == muteMods {
                     self.handleMuteToggle()
                 }
@@ -655,14 +657,15 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 print("🎵 [LOCAL] System key: keyCode=\(keyCode), pressed=\(keyPressed)")
                 
                 if keyPressed {
+                    let fineStep = event.modifierFlags.contains(.option)
                     switch keyCode {
                     case NX_KEYTYPE_SOUND_UP:
                         print("🔊 [LOCAL] Volume Up detected via media key")
-                        self.handleVolumeUp()
+                        self.handleVolumeUp(fineStep: fineStep)
                         return nil  // Consume event
                     case NX_KEYTYPE_SOUND_DOWN:
                         print("🔊 [LOCAL] Volume Down detected via media key")
-                        self.handleVolumeDown()
+                        self.handleVolumeDown(fineStep: fineStep)
                         return nil  // Consume event
                     case NX_KEYTYPE_MUTE:
                         print("🔊 [LOCAL] Mute detected via media key")
@@ -682,11 +685,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 let upMods   = NSEvent.ModifierFlags(rawValue: sc.volumeUp.modifiers).intersection([.command, .shift, .option, .control])
                 let downMods = NSEvent.ModifierFlags(rawValue: sc.volumeDown.modifiers).intersection([.command, .shift, .option, .control])
                 let muteMods = NSEvent.ModifierFlags(rawValue: sc.mute.modifiers).intersection([.command, .shift, .option, .control])
+                let fineStep = event.modifierFlags.contains(.option)
                 if keyCode == sc.volumeUp.keyCode && flags == upMods {
-                    self.handleVolumeUp()
+                    self.handleVolumeUp(fineStep: fineStep)
                     return nil
                 } else if keyCode == sc.volumeDown.keyCode && flags == downMods {
-                    self.handleVolumeDown()
+                    self.handleVolumeDown(fineStep: fineStep)
                     return nil
                 } else if keyCode == sc.mute.keyCode && flags == muteMods {
                     self.handleMuteToggle()
@@ -768,24 +772,32 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         eventTap = nil
     }
     
-    private func handleVolumeUp() {
+    private func effectiveVolumeStep(fineStep: Bool) -> Float {
+        guard fineStep else { return 0.05 }
+        let divisor = max(1.0, SetupState.currentFineStepDivisor)
+        return 0.05 / divisor
+    }
+    
+    private func handleVolumeUp(fineStep: Bool = false) {
         print("🔊 handleVolumeUp called")
         guard let volumeMonitor = volumeMonitor else {
             print("⚠️ No volume monitor available")
             return
         }
-        let newVolume = min(1.0, volumeMonitor.currentVolume + 0.05)
+        let step = effectiveVolumeStep(fineStep: fineStep)
+        let newVolume = min(1.0, volumeMonitor.currentVolume + step)
         print("📈 Setting volume to: \(newVolume)")
         volumeMonitor.setSystemVolume(Float(newVolume))
     }
     
-    private func handleVolumeDown() {
+    private func handleVolumeDown(fineStep: Bool = false) {
         print("🔊 handleVolumeDown called")
         guard let volumeMonitor = volumeMonitor else {
             print("⚠️ No volume monitor available")
             return
         }
-        let newVolume = max(0.0, volumeMonitor.currentVolume - 0.05)
+        let step = effectiveVolumeStep(fineStep: fineStep)
+        let newVolume = max(0.0, volumeMonitor.currentVolume - step)
         print("📉 Setting volume to: \(newVolume)")
         volumeMonitor.setSystemVolume(Float(newVolume))
     }

@@ -751,6 +751,38 @@ struct SettingsView: View {
                     )
                 }
             }
+
+            settingsSection(title: "Fine Volume Step", icon: "dial.medium") {
+                VStack(spacing: 10) {
+                    HStack {
+                        Text("Fine step divisor")
+                            .font(.system(size: 13, weight: .medium))
+                            .foregroundColor(.primary)
+                        Spacer()
+                        Text(String(format: "%.1f×", setupState.fineStepDivisor))
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundColor(.secondary)
+                    }
+
+                    Slider(
+                        value: Binding(
+                            get: { Double(setupState.fineStepDivisor) },
+                            set: { newValue in
+                                let rounded = (newValue * 10).rounded() / 10.0
+                                setupState.updateFineStepDivisor(Float(rounded))
+                            }
+                        ),
+                        in: 2.0...6.0,
+                        step: 0.1
+                    )
+                    .tint(.accentColor)
+
+                    Text("Hold Option with volume up/down for smaller steps (normal step divided by this value).")
+                        .font(.system(size: 11, weight: .regular))
+                        .foregroundColor(.secondary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+            }
             
             Button(action: {
                 setupState.updateShortcutVolumeUp(.defaultVolumeUp)

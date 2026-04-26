@@ -151,7 +151,7 @@ final class MediaKeyInterceptor {
     /// Handle a media key event
     /// Returns true if the event was handled (should be suppressed)
     /// Returns false if the event should pass through to the system
-    fileprivate func handleMediaKey(keyCode: UInt32, keyDown: Bool) -> Bool {
+    fileprivate func handleMediaKey(keyCode: UInt32, keyDown: Bool, optionHeld: Bool) -> Bool {
         // Only handle volume keys
         let isVolumeKey = keyCode == NX_KEYTYPE_SOUND_UP ||
                           keyCode == NX_KEYTYPE_SOUND_DOWN ||
@@ -170,11 +170,11 @@ final class MediaKeyInterceptor {
             
             switch keyCode {
             case NX_KEYTYPE_SOUND_UP:
-                self.handleVolumeUp()
+                self.handleVolumeUp(fineStep: optionHeld)
                 self.onVolumeUp?()
                 
             case NX_KEYTYPE_SOUND_DOWN:
-                self.handleVolumeDown()
+                self.handleVolumeDown(fineStep: optionHeld)
                 self.onVolumeDown?()
                 
             case NX_KEYTYPE_MUTE:
@@ -191,22 +191,30 @@ final class MediaKeyInterceptor {
     
     // MARK: - Volume Control
     
-    private func handleVolumeUp() {
+    private func effectiveVolumeStep(fineStep: Bool) -> Float {
+        guard fineStep else { return volumeStep }
+        let divisor = max(1.0, SetupState.currentFineStepDivisor)
+        return volumeStep / divisor
+    }
+    
+    private func handleVolumeUp(fineStep: Bool = false) {
         guard let monitor = volumeMonitor else {
             print("⚠️ MediaKeyInterceptor: No volume monitor attached")
             return
         }
-        let newVolume = min(1.0, monitor.currentVolume + volumeStep)
+        let step = effectiveVolumeStep(fineStep: fineStep)
+        let newVolume = min(1.0, monitor.currentVolume + step)
         print("🔊 MediaKeyInterceptor: Volume Up -> \(newVolume)")
         monitor.setSystemVolume(newVolume)
     }
     
-    private func handleVolumeDown() {
+    private func handleVolumeDown(fineStep: Bool = false) {
         guard let monitor = volumeMonitor else {
             print("⚠️ MediaKeyInterceptor: No volume monitor attached")
             return
         }
-        let newVolume = max(0.0, monitor.currentVolume - volumeStep)
+        let step = effectiveVolumeStep(fineStep: fineStep)
+        let newVolume = max(0.0, monitor.currentVolume - step)
         print("🔉 MediaKeyInterceptor: Volume Down -> \(newVolume)")
         monitor.setSystemVolume(newVolume)
     }
@@ -293,6 +301,7 @@ private func mediaKeyCallback(
     let keyUp = keyState == 0x0B
     let keyRepeat = (keyFlags & 0x1) != 0
     let shouldProcess = (keyDown || keyRepeat) && !keyUp
+    let optionHeld = event.flags.contains(.maskAlternate)
     
     // CRITICAL: Transport control keys MUST pass through to system immediately
     // These are: PLAY (16), NEXT/FAST (17), PREVIOUS/REWIND (18, 19)
@@ -329,7 +338,7 @@ private func mediaKeyCallback(
     let interceptor = Unmanaged<MediaKeyInterceptor>.fromOpaque(userInfo).takeUnretainedValue()
     
     // Handle the key event
-    if interceptor.handleMediaKey(keyCode: keyCode, keyDown: shouldProcess) {
+    if interceptor.handleMediaKey(keyCode: keyCode, keyDown: shouldProcess, optionHeld: optionHeld) {
         // Return nil to suppress system HUD
         return nil
     }
